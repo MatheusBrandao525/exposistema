@@ -4,19 +4,27 @@ import { LayoutDashboard, Image, ShoppingCart, Users, DollarSign, Settings, LogO
 
 export const Layout = () => {
   const [isSidebarOpen, setSidebarOpen] = React.useState(false)
+  const [eventName, setEventName] = React.useState('EXPOVALE')
   const navigate = useNavigate()
 
+  React.useEffect(() => {
+    fetch('http://localhost:8000/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.event_name) setEventName(data.event_name)
+      })
+  }, [])
+
   const navItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
-    { name: 'Espaços', icon: <Image size={20} />, path: '/spaces' },
-    { name: 'Vendas', icon: <ShoppingCart size={20} />, path: '/sales' },
-    { name: 'Clientes', icon: <Users size={20} />, path: '/customers' },
-    { name: 'Financeiro', icon: <DollarSign size={20} />, path: '/financial' },
-    { name: 'Configurações', icon: <Settings size={20} />, path: '/settings' },
+    { name: 'Dashboard', icon: <LayoutDashboard size={18} strokeWidth={2.5} />, path: '/' },
+    { name: 'Espaços', icon: <Image size={18} strokeWidth={2.5} />, path: '/spaces' },
+    { name: 'Financeiro', icon: <DollarSign size={18} strokeWidth={2.5} />, path: '/sales' },
+    { name: 'Vendedores', icon: <Users size={18} strokeWidth={2.5} />, path: '/sellers' },
+    { name: 'Clientes', icon: <Users size={18} strokeWidth={2.5} />, path: '/customers' },
+    { name: 'Configurações', icon: <Settings size={18} strokeWidth={2.5} />, path: '/settings' },
   ]
 
   const handleLogout = () => {
-    // Implement logic later
     navigate('/login')
   }
 
@@ -25,27 +33,28 @@ export const Layout = () => {
       {/* Mobile Header */}
       <header className="mobile-header glass">
         <button onClick={() => setSidebarOpen(!isSidebarOpen)}>
-          {isSidebarOpen ? <X /> : <Menu />}
+          {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
-        <span className="logo">ExpoSistema</span>
+        <span className="logo-text">{eventName}</span>
         <div className="user-avatar" />
       </header>
 
       {/* Sidebar */}
       <aside className={`sidebar glass ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-logo">
-          <h1>ExpoS</h1>
+        <div className="sidebar-brand">
+          <div className="brand-dot"></div>
+          <h1>{eventName}</h1>
         </div>
-        
+
         <nav className="nav-menu">
           {navItems.map((item) => (
-            <NavLink 
-              key={item.path} 
-              to={item.path} 
+            <NavLink
+              key={item.path}
+              to={item.path}
               className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
               onClick={() => setSidebarOpen(false)}
             >
-              {item.icon}
+              <div className="nav-icon-wrapper">{item.icon}</div>
               <span>{item.name}</span>
             </NavLink>
           ))}
@@ -53,8 +62,8 @@ export const Layout = () => {
 
         <div className="sidebar-footer">
           <button className="nav-link logout" onClick={handleLogout}>
-            <LogOut size={20} />
-            <span>Sair</span>
+            <div className="nav-icon-wrapper"><LogOut size={18} strokeWidth={2.5} /></div>
+            <span>Encerrar Sessão</span>
           </button>
         </div>
       </aside>
@@ -71,57 +80,111 @@ export const Layout = () => {
         }
 
         .sidebar {
-          width: 260px;
+          width: 280px;
           height: 100vh;
           position: sticky;
           top: 0;
           display: flex;
           flex-direction: column;
-          padding: 24px;
-          border-radius: 0 24px 24px 0;
+          padding: 32px 24px;
+          border-radius: 0;
+          border-right: 1px solid var(--border);
           z-index: 1000;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .sidebar-logo h1 {
-          font-size: 24px;
-          color: var(--primary);
-          margin-bottom: 40px;
+        .sidebar-brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 48px;
+          padding-left: 12px;
+        }
+
+        .brand-dot {
+          width: 8px;
+          height: 8px;
+          background: var(--primary);
+          border-radius: 50%;
+          box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .sidebar-brand h1 {
+          font-size: 20px;
+          letter-spacing: 0.15em;
+          color: var(--text-white);
+          font-weight: 800;
         }
 
         .nav-menu {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
           flex: 1;
         }
 
         .nav-link {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 14px;
           padding: 12px 16px;
-          border-radius: 12px;
+          border-radius: 14px;
           color: var(--text-muted);
           text-decoration: none;
-          transition: all 0.2s;
+          transition: all 0.25s;
           font-weight: 500;
+          font-size: 14px;
         }
 
-        .nav-link:hover, .nav-link.active {
+        .nav-icon-wrapper {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.02);
+          transition: all 0.25s;
+          color: var(--text-dim);
+        }
+
+        .nav-link:hover {
           color: var(--text-white);
-          background: rgba(245, 158, 11, 0.1);
+          background: rgba(255, 255, 255, 0.04);
+        }
+
+        .nav-link:hover .nav-icon-wrapper {
+          background: rgba(255, 255, 255, 0.08);
+          color: var(--text-white);
         }
 
         .nav-link.active {
           color: var(--primary);
-          background: rgba(245, 158, 11, 0.15);
+          background: rgba(251, 191, 36, 0.08);
+          font-weight: 600;
+        }
+
+        .nav-link.active .nav-icon-wrapper {
+          background: rgba(251, 191, 36, 0.15);
+          color: var(--primary);
+        }
+
+        .sidebar-footer {
+          padding-top: 24px;
+          border-top: 1px solid var(--border-muted);
         }
 
         .nav-link.logout:hover {
-          background: rgba(239, 68, 68, 0.1);
+          background: rgba(244, 63, 94, 0.1);
           color: var(--error);
         }
+        
+        .nav-link.logout:hover .nav-icon-wrapper {
+          background: rgba(244, 63, 94, 0.15);
+          color: var(--error);
+        }
+
+        .logo-text { font-weight: 800; letter-spacing: 0.1em; font-size: 18px; }
 
         .content {
           flex: 1;

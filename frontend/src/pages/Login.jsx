@@ -6,14 +6,35 @@ const Login = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = React.useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    const email = e.target.elements[0].value
+    const password = e.target.elements[1].value
     setLoading(true)
-    // Simulate login
-    setTimeout(() => {
+    
+    try {
+      const res = await fetch('http://localhost:8000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      const data = await res.json()
+      
+      if (data.success) {
+        localStorage.setItem('user', JSON.stringify(data.user))
+        if (data.user.role === 'seller') {
+          navigate('/seller/terminal')
+        } else {
+          navigate('/')
+        }
+      } else {
+        alert(data.error || 'Erro no login')
+      }
+    } catch (err) {
+      alert('Erro ao conectar com o servidor')
+    } finally {
       setLoading(false)
-      navigate('/')
-    }, 1000)
+    }
   }
 
   return (
@@ -28,7 +49,7 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
             <Mail size={18} />
-            <input type="email" placeholder="E-mail" required defaultValue="admin@exposistema.com" />
+            <input type="email" placeholder="E-mail" required defaultValue="admin@admin.com" />
           </div>
           <div className="input-group">
             <Lock size={18} />
@@ -85,26 +106,32 @@ const Login = () => {
           position: relative;
           display: flex;
           align-items: center;
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.03);
           border: 1px solid var(--border);
-          border-radius: 12px;
+          border-radius: 14px;
           padding: 0 16px;
-          transition: border-color 0.2s;
+          transition: all 0.3s;
         }
-        .input-group:focus-within { border-color: var(--primary); }
-        .input-group svg { color: var(--text-muted); }
+        .input-group:focus-within { 
+          border-color: var(--primary); 
+          background: rgba(251, 191, 36, 0.05);
+          box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.1);
+        }
+        .input-group svg { color: var(--text-dim); }
         .input-group input {
           width: 100%;
           background: none;
           border: none;
-          padding: 14px 12px;
+          padding: 16px 12px;
           color: white;
           font-family: inherit;
+          box-shadow: none;
+          transform: none;
         }
-        .input-group input:focus { outline: none; }
+        .input-group input:focus { outline: none; box-shadow: none; transform: none; background: none; }
         .login-btn {
           margin-top: 12px;
-          padding: 14px;
+          padding: 16px;
           display: flex;
           align-items: center;
           justify-content: center;
