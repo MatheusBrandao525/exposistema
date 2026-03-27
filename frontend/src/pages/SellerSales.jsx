@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet } from 'lucide-react'
+import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 
 const SellerSales = () => {
+  const navigate = useNavigate()
   const [step, setStep] = useState(1) // 1: Client, 2: Products, 3: Checkout
   const [clients, setClients] = useState([])
   const [products, setProducts] = useState([])
@@ -99,15 +101,32 @@ const SellerSales = () => {
     }
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
+
   if (success) {
     return (
-      <div className="flex-center w-full px-24">
-         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="success-card glass text-center">
+      <div style={{ 
+        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+        background: '#020617', zIndex: 9999, padding: '24px' 
+      }}>
+         <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }} 
+            animate={{ scale: 1, opacity: 1 }} 
+            className="glass"
+            style={{ 
+              maxWidth: '400px', width: '100%', padding: '60px 32px', 
+              textAlign: 'center', borderRadius: '40px', border: '1px solid rgba(255,255,255,0.1)' 
+            }}
+         >
             <div className="success-icon-wrapper mb-32">
-               <CheckCircle2 size={72} className="color-primary" />
+               <CheckCircle2 size={80} className="color-primary" />
             </div>
-            <h2 className="text-3xl font-black mb-16 text-white">Venda Concluída!</h2>
-            <p className="color-muted mb-40 text-sm opacity-60">O contrato foi gerado e o espaço foi reservado com sucesso no sistema.</p>
+            <h2 className="text-3xl font-black mb-16 text-white tracking-tight">Venda Concluída!</h2>
+            <p className="color-muted mb-40 text-sm opacity-60 leading-relaxed">O contrato foi gerado e o espaço foi reservado com sucesso no sistema.</p>
             <button className="btn btn-primary w-full py-20 font-black" onClick={() => window.location.reload()}>FINALIZAR E VOLTAR</button>
          </motion.div>
       </div>
@@ -123,6 +142,10 @@ const SellerSales = () => {
             <div className="avatar">V</div>
             <span>Vendedor Logado</span>
           </div>
+          <button onClick={handleLogout} className="logout-btn">
+             <LogOut size={16} />
+             <span>Sair</span>
+          </button>
           <h1 className="text-2xl font-black">Terminal de Vendas</h1>
         </div>
       </header>
@@ -317,7 +340,10 @@ const SellerSales = () => {
         .tracking-tighter { letter-spacing: -0.05em; }
         .tracking-widest { letter-spacing: 0.1em; }
 
-        .mobile-header-top { padding: 24px 20px; border-radius: 0 0 24px 24px; }
+        .mobile-header-top { padding: 24px 20px; border-radius: 0 0 24px 24px; position: relative; }
+        .header-content { display: flex; flex-direction: column; gap: 8px; position: relative; }
+        .logout-btn { position: absolute; top: 0; right: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; color: var(--text-white); cursor: pointer; transition: 0.2s; font-size: 11px; font-weight: 700; margin-top: -4px; }
+        .logout-btn:hover { background: rgba(244, 63, 94, 0.1); border-color: var(--error); color: var(--error); }
         .user-badge-mini { display: flex; align-items: center; gap: 8px; font-size: 12px; opacity: 0.7; }
         .user-badge-mini .avatar { width: 24px; height: 24px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: black; font-size: 10px; }
 
