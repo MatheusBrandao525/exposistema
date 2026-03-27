@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X } from 'lucide-react'
+import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const SellerSales = () => {
@@ -18,12 +18,24 @@ const SellerSales = () => {
         setLoading(true)
         fetch(`http://localhost:8000/api/clients/search?q=${searchTerm}`)
           .then(res => res.json())
-          .then(data => { setClients(data); setLoading(false); })
+          .then(data => { 
+             setClients(data || []); 
+             setLoading(false); 
+          })
+          .catch(err => {
+             setLoading(false)
+          })
       } else if (step === 2 && searchTerm.length > 1) {
         setLoading(true)
         fetch(`http://localhost:8000/api/spaces/search?q=${searchTerm}`)
           .then(res => res.json())
-          .then(data => { setProducts(data); setLoading(false); })
+          .then(data => { 
+             setProducts(data || []); 
+             setLoading(false); 
+          })
+          .catch(err => {
+             setLoading(false)
+          })
       }
     }, 400)
 
@@ -31,7 +43,8 @@ const SellerSales = () => {
   }, [searchTerm, step])
 
   const filteredClients = clients
-  const filteredProducts = products
+  const filteredProducts = products 
+
 
   const addToCart = (product) => {
     if (!cart.find(item => item.id === product.id)) {
@@ -46,11 +59,21 @@ const SellerSales = () => {
 
   const getTotal = () => cart.reduce((acc, item) => acc + (item.base_price * item.quantity), 0)
 
+  const [paymentMethod, setPaymentMethod] = useState('pix')
+
   const handleFinish = async () => {
+    if (!selectedClient || cart.length === 0) return
+    
     setLoading(true)
+    const userString = localStorage.getItem('user')
+    const user = userString ? JSON.parse(userString) : { id: 1 }
+
     const payload = {
       client_id: selectedClient.id,
+      user_id: user.id || 1,
+      event_id: 1, // Default event
       total_price: getTotal(),
+      payment_method: paymentMethod,
       items: cart.map(item => ({ id: item.id, price: item.base_price, quantity: item.quantity }))
     }
 
@@ -66,9 +89,11 @@ const SellerSales = () => {
         setCart([])
         setSelectedClient(null)
         setStep(1)
+      } else {
+        alert('Erro: ' + (data.error || 'Falha ao salvar venda'))
       }
     } catch (err) {
-      alert('Erro ao finalizar venda')
+      alert('Erro ao conectar com o servidor')
     } finally {
       setLoading(false)
     }
@@ -76,13 +101,15 @@ const SellerSales = () => {
 
   if (success) {
     return (
-      <div className="mobile-view flex-center animate-fade">
-        <div className="glass success-card text-center">
-          <CheckCircle2 size={80} className="color-primary" style={{margin: '0 auto 20px'}} />
-          <h2>Venda Concluída!</h2>
-          <p>O recibo foi gerado e a venda registrada com sucesso.</p>
-          <button className="btn btn-primary w-full" onClick={() => setSuccess(false)}>Nova Venda</button>
-        </div>
+      <div className="flex-center w-full px-24">
+         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="success-card glass text-center">
+            <div className="success-icon-wrapper mb-32">
+               <CheckCircle2 size={72} className="color-primary" />
+            </div>
+            <h2 className="text-3xl font-black mb-16 text-white">Venda Concluída!</h2>
+            <p className="color-muted mb-40 text-sm opacity-60">O contrato foi gerado e o espaço foi reservado com sucesso no sistema.</p>
+            <button className="btn btn-primary w-full py-20 font-black" onClick={() => window.location.reload()}>FINALIZAR E VOLTAR</button>
+         </motion.div>
       </div>
     )
   }
@@ -94,9 +121,9 @@ const SellerSales = () => {
         <div className="header-content">
           <div className="user-badge-mini">
             <div className="avatar">V</div>
-            <span>Vendedor</span>
+            <span>Vendedor Logado</span>
           </div>
-          <h1>Terminal de Vendas</h1>
+          <h1 className="text-2xl font-black">Terminal de Vendas</h1>
         </div>
       </header>
 
@@ -113,25 +140,27 @@ const SellerSales = () => {
         {step === 1 && (
           <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="step-container">
             <div className={`input-group-mobile glass ${searchTerm ? 'focused' : ''}`}>
-              <Search size={20} />
+              <Search size={20} className="color-muted" />
               <input 
-                placeholder="Buscar cliente..." 
+                placeholder="Pesquise o cliente por nome..." 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
               />
             </div>
 
             <div className="list-container mt-20">
-              {filteredClients.map(client => (
+              {filteredClients.length > 0 ? filteredClients.map(client => (
                 <div key={client.id} className="glass list-item animate-slideUp" onClick={() => { setSelectedClient(client); setStep(2); setSearchTerm('') }}>
-                  <div className="item-icon"><User size={20}/></div>
+                  <div className="item-icon"><User size={20} className="color-primary" /></div>
                   <div className="item-info">
                     <strong>{client.name}</strong>
                     <span>{client.company || 'Pessoa Física'}</span>
                   </div>
-                  <ChevronRight size={20} className="color-muted" />
+                  <ChevronRight size={20} className="color-muted opacity-50" />
                 </div>
-              ))}
+              )) : searchTerm.length > 1 && !loading && (
+                <p className="text-center py-40 color-muted italic">Nenhum cliente encontrado.</p>
+              )}
             </div>
           </motion.div>
         )}
@@ -143,13 +172,13 @@ const SellerSales = () => {
                 <span>Cliente selecionado</span>
                 <strong>{selectedClient?.name}</strong>
               </div>
-              <X size={20} />
+              <div className="edit-badge">Alterar</div>
             </div>
 
             <div className={`input-group-mobile glass ${searchTerm ? 'focused' : ''}`}>
-              <Search size={20} />
+              <Search size={20} className="color-muted" />
               <input 
-                placeholder="Buscar serviço ou produto..." 
+                placeholder="Qual espaço deseja vender?" 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
               />
@@ -158,12 +187,12 @@ const SellerSales = () => {
             <div className="list-container mt-20">
               {filteredProducts.map(product => (
                 <div key={product.id} className="glass list-item animate-slideUp" onClick={() => addToCart(product)}>
-                  <div className="item-icon"><Package size={20}/></div>
+                  <div className="item-icon"><Package size={20} className="color-accent" /></div>
                   <div className="item-info">
                     <strong>{product.name}</strong>
-                    <span className="price">R$ {product.base_price}</span>
+                    <span className="price">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.base_price)}</span>
                   </div>
-                  <Plus size={20} className="color-primary" />
+                  <div className="plus-btn-circle"><Plus size={18} /></div>
                 </div>
               ))}
             </div>
@@ -172,21 +201,75 @@ const SellerSales = () => {
 
         {step === 3 && (
           <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="step-container">
-             <div className="summary-card glass p-20 mb-20">
-                <h3>Resumo do Pedido</h3>
-                <div className="client-line mt-10">
-                  <User size={16} /> <span>{selectedClient?.name}</span>
-                </div>
-                <div className="cart-items mt-20">
-                  {cart.map(item => (
-                    <div key={item.id} className="cart-item">
-                      <div className="info">
-                        <strong>{item.name}</strong>
-                        <span>R$ {item.base_price}</span>
+             <div className="review-receipt-card glass overflow-hidden">
+                <div className="receipt-header p-32">
+                   <div className="flex justify-between align-center mb-24">
+                      <h3 className="text-xl font-extrabold uppercase tracking-widest text-white border-left-gold pl-12">Recibo de Venda</h3>
+                      <div className="badge-pending">Revisão</div>
+                   </div>
+                   <div className="client-box p-24 rounded-20 bg-alpha-10 border-gold-subtle">
+                      <div className="flex align-center gap-12 mb-12">
+                        <User size={16} className="color-primary" />
+                        <span className="text-xs uppercase font-black color-primary tracking-widest">Contratante</span>
                       </div>
-                      <button className="remove-btn" onClick={() => removeFromCart(item.id)}><Trash2 size={16}/></button>
+                      <strong className="text-xl block text-white mb-8 pr-12">{selectedClient?.name}</strong>
+                      <div className="flex-column gap-8 text-xs color-muted">
+                        <div className="flex align-center gap-6">
+                           <span className="text-white opacity-40 font-bold min-w-60">Empresa:</span>
+                           <span className="text-white opacity-80">{selectedClient?.company || 'Pessoa Física'}</span>
+                        </div>
+                        <div className="flex align-center gap-6">
+                           <span className="text-white opacity-40 font-bold min-w-60">Contato:</span>
+                           <span className="text-white opacity-80">{selectedClient?.email}</span>
+                        </div>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="receipt-body p-32 pt-0">
+                  <div className="items-list mb-32">
+                    <span className="text-xs uppercase font-black color-muted mb-20 block tracking-widest">Produtos Adicionados</span>
+                    {cart.map(item => (
+                      <div key={item.id} className="receipt-item py-24 flex justify-between align-start">
+                        <div className="info flex-1 pr-20">
+                          <strong className="block text-lg text-white mb-6 leading-tight">{item.name}</strong>
+                          <span className="text-xs color-muted block font-medium">Serviço de Mídia & Publicidade</span>
+                        </div>
+                        <div className="flex-column align-end gap-16">
+                           <strong className="text-lg color-primary font-black">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.base_price)}</strong>
+                           <button className="remove-icon-btn flex align-center gap-8" onClick={() => removeFromCart(item.id)}>
+                              <Trash2 size={16}/> <span className="text-tiny font-black">REMOVER</span>
+                           </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="payment-selector">
+                     <span className="text-xs uppercase font-black color-muted mb-16 block tracking-widest text-center">Forma de Recebimento</span>
+                     <div className="grid-3 gap-16">
+                        <div className={`pay-option ${paymentMethod === 'pix' ? 'active' : ''}`} onClick={() => setPaymentMethod('pix')}>
+                           <ArrowUpRight size={24} />
+                           <span>PIX ONLINE</span>
+                        </div>
+                        <div className={`pay-option ${paymentMethod === 'credito' ? 'active' : ''}`} onClick={() => setPaymentMethod('credito')}>
+                           <CreditCard size={24} />
+                           <span>CARTÃO</span>
+                        </div>
+                        <div className={`pay-option ${paymentMethod === 'dinheiro' ? 'active' : ''}`} onClick={() => setPaymentMethod('dinheiro')}>
+                           <Wallet size={24} />
+                           <span>DINHEIRO</span>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+                
+                <div className="receipt-footer p-32 bg-white-alpha-2 border-top flex justify-between align-center">
+                    <div className="total-label-box">
+                       <span className="text-xs uppercase font-black color-muted tracking-widest block mb-4">TOTAL LÍQUIDO</span>
+                       <span className="text-tiny color-success font-black">VALOR FINAL DO CONTRATO</span>
                     </div>
-                  ))}
+                    <strong className="text-4xl font-black text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getTotal())}</strong>
                 </div>
              </div>
           </motion.div>
@@ -228,13 +311,13 @@ const SellerSales = () => {
           display: flex;
           flex-direction: column;
         }
+        .text-2xl { font-size: 24px; }
+        .text-3xl { font-size: 32px; }
+        .font-black { font-weight: 900; }
+        .tracking-tighter { letter-spacing: -0.05em; }
+        .tracking-widest { letter-spacing: 0.1em; }
 
-        .mobile-header-top {
-          padding: 24px 20px;
-          border-radius: 0 0 24px 24px;
-        }
-
-        .header-content h1 { font-size: 20px; margin-top: 8px; font-weight: 800; }
+        .mobile-header-top { padding: 24px 20px; border-radius: 0 0 24px 24px; }
         .user-badge-mini { display: flex; align-items: center; gap: 8px; font-size: 12px; opacity: 0.7; }
         .user-badge-mini .avatar { width: 24px; height: 24px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: black; font-size: 10px; }
 
@@ -250,37 +333,107 @@ const SellerSales = () => {
 
         .list-container { display: flex; flex-direction: column; gap: 12px; }
         .list-item { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 16px; cursor: pointer; }
-        .item-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .item-icon { width: 44px; height: 44px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .item-info { flex: 1; display: flex; flex-direction: column; }
         .item-info strong { font-size: 15px; }
         .item-info span { font-size: 12px; color: var(--text-muted); }
         .item-info .price { color: var(--primary); font-weight: 700; margin-top: 2px; }
 
-        .selected-client-banner { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 16px; background: rgba(245, 158, 11, 0.05); border-color: var(--primary); }
+        .selected-client-banner { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-radius: 20px; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); }
         .selected-client-banner .info span { font-size: 10px; text-transform: uppercase; color: var(--primary); font-weight: 800; display: block; }
         .selected-client-banner .info strong { font-size: 16px; }
+        .edit-badge { background: var(--primary); color: black; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; }
 
-        .summary-card h3 { font-size: 18px; font-weight: 800; }
-        .client-line { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted); }
-        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .cart-item .info strong { display: block; font-size: 14px; }
-        .cart-item .info span { font-size: 12px; color: var(--primary); font-weight: 700; }
-        .remove-btn { color: var(--error); opacity: 0.6; background: none; border: none; }
+        .plus-btn-circle { width: 32px; height: 32px; background: rgba(251, 191, 36, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-        .mobile-footer-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 24px 24px 0 0; z-index: 2000; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); }
+        /* Receipt Card Styles */
+        .review-receipt-card { border-radius: 28px; border: 1px solid var(--border); background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%); }
+        .bg-alpha-5 { background: rgba(255,255,255,0.02); }
+        .border-top { border-top: 1px solid var(--border); }
+        .badge-pending { background: rgba(251, 191, 36, 0.1); color: var(--primary); font-size: 10px; font-weight: 800; padding: 6px 14px; border-radius: 100px; text-transform: uppercase; }
+        
+        .border-left-gold { border-left: 4px solid var(--primary); }
+        .border-gold-subtle { border: 1px solid rgba(251, 191, 36, 0.2); }
+        .bg-white-alpha-2 { background: rgba(255,255,255,0.02); }
+        .align-start { align-items: flex-start; }
+        .align-end { align-items: flex-end; }
+        .mb-4 { margin-bottom: 4px; }
+        .mb-8 { margin-bottom: 8px; }
+        .mb-16 { margin-bottom: 16px; }
+        .mb-24 { margin-bottom: 24px; }
+        .mb-32 { margin-bottom: 32px; }
+        .p-16 { padding: 16px; }
+        .p-20 { padding: 20px; }
+        .p-24 { padding: 24px; }
+        .p-32 { padding: 32px; }
+        .rounded-20 { border-radius: 20px; }
+        .gap-2 { gap: 2px; }
+        .gap-4 { gap: 4px; }
+        .gap-6 { gap: 6px; }
+        .gap-8 { gap: 8px; }
+        .gap-12 { gap: 12px; }
+        .gap-16 { gap: 16px; }
+        .min-w-60 { min-width: 60px; display: inline-block; }
+        .opacity-80 { opacity: 0.8; }
+
+        .receipt-item { border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .receipt-item:last-child { border-bottom: none; }
+        .remove-icon-btn { background: none; border: none; color: var(--error); opacity: 0.5; cursor: pointer; transition: 0.2s; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .remove-icon-btn:hover { opacity: 1; transform: translateX(5px); }
+
+        .payment-selector .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .pay-option { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; transition: 0.3s; color: var(--text-muted); }
+        .pay-option span { font-size: 11px; font-weight: 700; }
+        .pay-option.active { border-color: var(--primary); background: rgba(251, 191, 36, 0.1); color: var(--primary); box-shadow: 0 8px 20px rgba(245, 158, 11, 0.15); transform: translateY(-4px); }
+
+        .mobile-footer-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; padding: 24px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 32px 32px 0 0; z-index: 2000; box-shadow: 0 -15px 40px rgba(0,0,0,0.8); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border); }
         .total-info { display: flex; flex-direction: column; }
-        .total-info span { font-size: 11px; color: var(--text-muted); }
-        .total-info strong { font-size: 20px; }
+        .total-info span { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+        .total-info strong { font-size: 22px; font-weight: 900; }
 
-        .flex-center { display: flex; center; justify-content: center; height: 100vh; padding: 20px; }
-        .success-card { padding: 40px 20px; border-radius: 32px; width: 100%; }
-        .success-card p { opacity: 0.6; margin: 12px 0 32px; }
+        .success-icon-wrapper { width: 140px; height: 140px; background: rgba(251, 191, 36, 0.05); border-radius: 40px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid rgba(251, 191, 36, 0.1); transform: rotate(-10deg); }
+        .flex-center { 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: #000;
+          z-index: 3000;
+          padding: 20px; 
+        }
+        .success-card { padding: 60px 32px; border-radius: 40px; width: 100%; border: 1px solid var(--border); }
         
         .px-20 { padding-left: 20px; padding-right: 20px; }
         .py-20 { padding-top: 20px; padding-bottom: 20px; }
+        .mt-4 { margin-top: 4px; }
+        .mt-12 { margin-top: 12px; }
         .mt-20 { margin-top: 20px; }
+        .mt-32 { margin-top: 32px; }
         .mb-20 { margin-bottom: 20px; }
+        .text-center { text-align: center; }
+        .flex-column { display: flex; flex-direction: column; }
+        .success-card { padding: 60px 32px; border-radius: 40px; width: 100%; max-width: 400px; border: 1px solid var(--border); margin: 0 auto; }
+        .btn-primary.w-full { width: 100%; }
+        .min-h-vh { min-height: 100vh; }
+        .justify-center { justify-content: center; }
         .w-full { width: 100%; }
+        .rounded-16 { border-radius: 16px; }
+        .opacity-50 { opacity: 0.5; }
+        .text-tiny { font-size: 8px; letter-spacing: 0.1em; }
+        .leading-tight { line-height: 1.2; }
+        .pr-20 { padding-right: 20px; }
+        .mb-6 { margin-bottom: 6px; }
+        .mb-12 { margin-bottom: 12px; }
+        .mb-20 { margin-bottom: 20px; }
+        .color-success { color: #10b981; }
+        .font-medium { font-weight: 500; }
+        .opacity-40 { opacity: 0.4; }
+        .font-bold { font-weight: 700; }
+        .gap-6 { gap: 6px; }
       `}</style>
     </div>
   )
