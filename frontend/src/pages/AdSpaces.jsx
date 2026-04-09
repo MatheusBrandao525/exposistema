@@ -1,5 +1,6 @@
 import React from 'react'
 import { Plus, Filter, Search, Tag, MapPin, DollarSign } from 'lucide-react'
+import api from '../api'
 
 const AdSpaceCard = ({ space }) => (
   <div className="glass ad-card animate-fade">
@@ -8,11 +9,11 @@ const AdSpaceCard = ({ space }) => (
       <span className={`status-badge ${space.status}`}>{space.status === 'available' ? 'Disponível' : space.status === 'reserved' ? 'Reservado' : 'Vendido'}</span>
     </div>
     <div className="card-content">
-      <div className="card-type">{space.type}</div>
+      <div className="card-type">{space.type_name || space.type}</div>
       <h3>{space.name}</h3>
       <div className="card-info">
-        <div className="info-item"><MapPin size={14} /> {space.location}</div>
-        <div className="info-item"><DollarSign size={14} /> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(space.price)}</div>
+        <div className="info-item"><MapPin size={14} /> {space.location || 'Área Geral'}</div>
+        <div className="info-item"><DollarSign size={14} /> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(space.base_price || space.price)}</div>
       </div>
       <button className="btn btn-secondary card-btn" disabled={space.status !== 'available'}>
         {space.status === 'available' ? 'Vender Espaço' : 'Detalhes'}
@@ -44,14 +45,22 @@ const AdSpaceCard = ({ space }) => (
 )
 
 const AdSpaces = () => {
-  const [spaces] = React.useState([
-    { id: 1, name: 'Arena Banner A1', type: 'Banner', location: 'Arena Principal', status: 'available', price: 4500 },
-    { id: 2, name: 'Telão Principal Centro', type: 'Painel Digital', location: 'Praça de Alimentação', status: 'sold', price: 15000 },
-    { id: 3, name: 'Fachada Entrada Oeste', type: 'Fachada', location: 'Entrada Principal', status: 'available', price: 8000 },
-    { id: 4, name: 'Banner Curral B4', type: 'Banner', location: 'Arena Principal', status: 'reserved', price: 3200 },
-    { id: 5, name: 'Totem Publicitário 01', type: 'Totem', location: 'Corredor Central', status: 'available', price: 2500 },
-    { id: 6, name: 'Camarote Vip Branding', type: 'Adesivação', location: 'Camarotes', status: 'available', price: 22000 },
-  ])
+  const [spaces, setSpaces] = React.useState([])
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    fetchSpaces()
+  }, [])
+
+  const fetchSpaces = () => {
+    api.get('/spaces')
+      .then(res => res.json())
+      .then(data => {
+        setSpaces(data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }
 
   return (
     <div className="spaces-page">

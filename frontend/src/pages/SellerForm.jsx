@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Save, Mail, User, Shield, Briefcase, RefreshCw, Key } from 'lucide-react'
+import api from '../api'
 
 const SellerForm = () => {
   const { id } = useParams()
@@ -32,7 +30,7 @@ const SellerForm = () => {
   const fetchSeller = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`http://localhost:8000/api/users`)
+      const res = await api.get(`/users`)
       const sellers = await res.json()
       const current = sellers.find(s => s.id === parseInt(id))
       if (current) {
@@ -52,17 +50,11 @@ const SellerForm = () => {
     e.preventDefault()
     setSaving(true)
     
-    const method = id ? 'PUT' : 'POST'
-    const url = id 
-      ? `http://localhost:8000/api/users/${id}` 
-      : 'http://localhost:8000/api/users'
+    const method = id ? 'put' : 'post'
+    const endpoint = id ? `/users/${id}` : '/users'
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
+      const res = await api[method](endpoint, formData)
       const data = await res.json()
       if (data.success) {
         navigate('/sellers')

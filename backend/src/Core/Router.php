@@ -2,16 +2,19 @@
 
 namespace App\Core;
 
+use App\Core\Auth;
+
 class Router
 {
     private array $routes = [];
 
-    public function add(string $method, string $path, string $handler): void
+    public function add(string $method, string $path, string $handler, bool $protected = false): void
     {
         $this->routes[] = [
             'method' => $method,
             'path' => $path,
-            'handler' => $handler
+            'handler' => $handler,
+            'protected' => $protected
         ];
     }
 
@@ -30,6 +33,10 @@ class Router
             $pattern = "#^" . $pattern . "$#";
 
             if ($route['method'] === $method && preg_match($pattern, $path, $matches)) {
+                if ($route['protected']) {
+                    Auth::check();
+                }
+
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
                 [$controllerName, $action] = explode('@', $route['handler']);
                 $controllerClass = "App\\Controllers\\$controllerName";

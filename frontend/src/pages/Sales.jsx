@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Search, Filter, BarChart3, Users, Tags, ArrowUpRight, Download, Calendar, Wallet, CreditCard, Banknote, Printer, FileText, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import api from '../api'
 
 const StatCard = ({ title, value, icon, trend }) => (
   <div className="glass p-24 flex gap-24 align-center animate-fade">
@@ -36,9 +37,9 @@ const Sales = () => {
   const fetchInitialData = async () => {
     try {
       const [salesRes, usersRes, typesRes] = await Promise.all([
-        fetch('http://localhost:8000/api/sales').then(r => r.json()),
-        fetch('http://localhost:8000/api/users').then(r => r.json()),
-        fetch('http://localhost:8000/api/types').then(r => r.json())
+        api.get('/sales').then(r => r.json()),
+        api.get('/users').then(r => r.json()),
+        api.get('/types').then(r => r.json())
       ])
       setSales(salesRes)
       setSellers(usersRes)

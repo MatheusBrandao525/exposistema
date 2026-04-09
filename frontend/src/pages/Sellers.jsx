@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, UserPlus, Mail, Shield, Briefcase, Trash2, Edit2 } from 'lucide-react'
+import api from '../api'
 
 const Sellers = () => {
   const [sellers, setSellers] = useState([])
@@ -12,14 +13,14 @@ const Sellers = () => {
   }, [])
 
   const fetchSellers = () => {
-    fetch('http://localhost:8000/api/users')
+    api.get('/users')
       .then(res => res.json())
       .then(setSellers)
   }
 
   const handleDelete = (id) => {
     if (confirm('Deseja realmente remover este vendedor?')) {
-      fetch(`http://localhost:8000/api/users/${id}`, { method: 'DELETE' })
+      api.delete(`/users/${id}`)
         .then(() => fetchSellers())
     }
   }

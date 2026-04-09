@@ -75,7 +75,12 @@ class UserController extends Controller
 
         if ($user && password_verify($data['password'], $user['password'])) {
             unset($user['password']);
-            $this->jsonResponse(['success' => true, 'user' => $user]);
+            $token = \App\Core\Auth::generateToken($user);
+            $this->jsonResponse([
+                'success' => true, 
+                'user' => $user,
+                'token' => $token
+            ]);
         } else {
             $this->jsonResponse(['error' => 'Credenciais inválidas'], 401);
         }

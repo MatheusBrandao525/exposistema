@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Settings as SettingsIcon, Palette, Globe, Shield, Save, CloudLightning, RefreshCw, Type, Calendar, Image as ImageIcon, ChevronRight } from 'lucide-react'
+import api from '../api'
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('branding')
@@ -13,7 +14,7 @@ const Settings = () => {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/settings')
+    api.get('/settings')
       .then(res => res.json())
       .then(data => {
         if (data && Object.keys(data).length > 0) setSettings(data)
@@ -24,11 +25,7 @@ const Settings = () => {
     e.preventDefault()
     setSaving(true)
     try {
-      await fetch('http://localhost:8000/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
-      })
+      await api.post('/settings', settings)
       alert('Configurações aplicadas com sucesso! 🎉')
     } catch (err) {
       alert('Houve um erro técnico ao processar sua solicitação.')

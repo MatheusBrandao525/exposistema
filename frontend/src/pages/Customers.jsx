@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Search, UserPlus, Mail, Phone, Building, Edit2, Trash2, X } from 'lucide-react'
+import api from '../api'
 
 const Customers = () => {
   const [clients, setClients] = useState([])
@@ -13,7 +14,7 @@ const Customers = () => {
   }, [])
 
   const fetchClients = () => {
-    fetch('http://localhost:8000/api/clients')
+    api.get('/clients')
       .then(res => res.json())
       .then(setClients)
   }
@@ -31,17 +32,13 @@ const Customers = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const url = editingClient 
-      ? `http://localhost:8000/api/clients/${editingClient.id}` 
-      : 'http://localhost:8000/api/clients'
+    const endpoint = editingClient 
+      ? `/clients/${editingClient.id}` 
+      : '/clients'
     
-    const method = editingClient ? 'PUT' : 'POST'
+    const method = editingClient ? 'put' : 'post'
 
-    fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    })
+    api[method](endpoint, formData)
     .then(() => {
       fetchClients()
       setShowModal(false)
@@ -50,7 +47,7 @@ const Customers = () => {
 
   const handleDelete = (id) => {
     if (confirm('Deseja realmente excluir este cliente?')) {
-      fetch(`http://localhost:8000/api/clients/${id}`, { method: 'DELETE' })
+      api.delete(`/clients/${id}`)
         .then(() => fetchClients())
     }
   }

@@ -21,23 +21,22 @@ class SaleController extends Controller
                     s.negotiated_price as total_price,
                     c.name as client_name, 
                     u.name as seller_name, 
-                    u.seller_function as seller_function
+                    u.seller_function as seller_function,
+                    GROUP_CONCAT(t.name) as item_types_raw
                 FROM sales s
                 JOIN clients c ON s.client_id = c.id
                 JOIN users u ON s.user_id = u.id
+                LEFT JOIN sale_items si ON si.sale_id = s.id
+                LEFT JOIN ad_spaces asp ON si.ad_space_id = asp.id
+                LEFT JOIN ad_space_types t ON asp.ad_space_type_id = t.id
+                GROUP BY s.id
                 ORDER BY s.created_at DESC";
         $stmt = $this->db->query($sql);
         $sales = $stmt->fetchAll();
         
         foreach ($sales as &$sale) {
-            $item_sql = "SELECT t.name 
-                         FROM sale_items si 
-                         JOIN ad_spaces asp ON si.ad_space_id = asp.id 
-                         JOIN ad_space_types t ON asp.ad_space_type_id = t.id 
-                         WHERE si.sale_id = ?";
-            $item_stmt = $this->db->prepare($item_sql);
-            $item_stmt->execute([$sale['id']]);
-            $sale['item_types'] = $item_stmt->fetchAll(\PDO::FETCH_COLUMN);
+            $sale['item_types'] = $sale['item_types_raw'] ? explode(',', $sale['item_types_raw']) : [];
+            unset($sale['item_types_raw']);
         }
         
         $this->jsonResponse($sales);

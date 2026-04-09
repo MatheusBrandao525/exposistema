@@ -13,7 +13,8 @@ const Login = () => {
     setLoading(true)
     
     try {
-      const res = await fetch('http://localhost:8000/api/login', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+      const res = await fetch(`${apiUrl}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -22,6 +23,7 @@ const Login = () => {
       
       if (data.success) {
         localStorage.setItem('user', JSON.stringify(data.user))
+        localStorage.setItem('token', data.token)
         if (data.user.role === 'seller') {
           navigate('/seller/terminal')
         } else {
