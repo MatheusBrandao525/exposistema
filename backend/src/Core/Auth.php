@@ -39,6 +39,13 @@ class Auth {
         return $data;
     }
 
+    public static function getUser(): ?array {
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? '';
+        $token = str_replace('Bearer ', '', $authHeader);
+        return self::verifyToken($token);
+    }
+
     public static function check(): void {
         $headers = getallheaders();
         $authHeader = $headers['Authorization'] ?? '';

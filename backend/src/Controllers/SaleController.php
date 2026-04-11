@@ -44,6 +44,12 @@ class SaleController extends Controller
 
     public function store(): void
     {
+        $user = \App\Core\Auth::getUser();
+        if (!$user || $user['role'] !== 'seller') {
+            $this->jsonResponse(['success' => false, 'error' => 'Apenas vendedores podem realizar vendas.'], 403);
+            return;
+        }
+
         $data = $this->getPostData();
         $this->db->beginTransaction();
         

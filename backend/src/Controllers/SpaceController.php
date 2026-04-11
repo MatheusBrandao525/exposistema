@@ -60,4 +60,33 @@ class SpaceController extends Controller
         $stmt->execute(["%$q%", "%$q%"]);
         $this->jsonResponse($stmt->fetchAll());
     }
+
+    public function getBookingDetails(int $id): void
+    {
+        $sql = "SELECT 
+                    s.id as sale_id,
+                    s.purchase_date,
+                    s.status as payment_status,
+                    c.name as client_name,
+                    c.company as client_company,
+                    u.name as seller_name,
+                    si.item_price as negotiated_price
+                FROM sale_items si
+                JOIN sales s ON si.sale_id = s.id
+                JOIN clients c ON s.client_id = c.id
+                JOIN users u ON s.user_id = u.id
+                WHERE si.ad_space_id = ?
+                ORDER BY s.created_at DESC
+                LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$id]);
+        $details = $stmt->fetch();
+        
+        if ($details) {
+            $this->jsonResponse($details);
+        } else {
+            $this->jsonResponse(['error' => 'Nenhuma reserva encontrada para este espaço.'], 404);
+        }
+    }
 }

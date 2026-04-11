@@ -62,6 +62,7 @@ $router->add('POST', '/spaces', 'SpaceController@store', true);
 $router->add('PUT', '/spaces/{id}', 'SpaceController@update', true);
 $router->add('DELETE', '/spaces/{id}', 'SpaceController@delete', true);
 $router->add('GET', '/spaces/search', 'SpaceController@search', true);
+$router->add('GET', '/spaces/{id}/booking-details', 'SpaceController@getBookingDetails', true);
 
 // Protected Routes (Sales)
 $router->add('GET', '/sales', 'SaleController@index', true);
