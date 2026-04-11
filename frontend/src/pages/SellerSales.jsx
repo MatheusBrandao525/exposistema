@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import api from '../api'
 
 const SellerSales = () => {
   const navigate = useNavigate()
@@ -15,34 +16,38 @@ const SellerSales = () => {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (step === 1 && searchTerm.length > 1) {
-        setLoading(true)
-        fetch(`http://localhost:8000/api/clients/search?q=${searchTerm}`)
-          .then(res => res.json())
-          .then(data => { 
-             setClients(data || []); 
-             setLoading(false); 
-          })
-          .catch(err => {
-             setLoading(false)
-          })
-      } else if (step === 2 && searchTerm.length > 1) {
-        setLoading(true)
-        fetch(`http://localhost:8000/api/spaces/search?q=${searchTerm}`)
-          .then(res => res.json())
-          .then(data => { 
-             setProducts(data || []); 
-             setLoading(false); 
-          })
-          .catch(err => {
-             setLoading(false)
-          })
-      }
-    }, 400)
+    fetchList()
+  }, [step])
 
-    return () => clearTimeout(delayDebounceFn)
-  }, [searchTerm, step])
+  useEffect(() => {
+    if (searchTerm.length > 1) {
+      const delayDebounceFn = setTimeout(() => {
+        fetchList(searchTerm)
+      }, 400)
+      return () => clearTimeout(delayDebounceFn)
+    } else if (searchTerm.length === 0) {
+      fetchList()
+    }
+  }, [searchTerm])
+
+  const fetchList = async (query = '') => {
+    setLoading(true)
+    try {
+      const endpoint = step === 1 
+        ? (query ? `/clients/search?q=${query}` : '/clients') 
+        : (query ? `/spaces/search?q=${query}` : '/spaces');
+      
+      const res = await api.get(endpoint)
+      const data = await res.json()
+      
+      if (step === 1) setClients(data || [])
+      else setProducts(data || [])
+    } catch (err) {
+      console.error("Erro ao buscar dados", err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredClients = clients
   const filteredProducts = products 
@@ -80,11 +85,7 @@ const SellerSales = () => {
     }
 
     try {
-      const res = await fetch('http://localhost:8000/api/sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
+      const res = await api.post('/sales', payload)
       const data = await res.json()
       if (data.success) {
         setSuccess(true)
