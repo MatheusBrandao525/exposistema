@@ -14,10 +14,19 @@ const Sellers = lazy(() => import('./pages/Sellers'))
 const SellerForm = lazy(() => import('./pages/SellerForm'))
 const SellerSales = lazy(() => import('./pages/SellerSales'))
 
-// Mock Auth Hook (to be replaced with real Sanctum auth)
 const useAuth = () => {
-  const [user, setUser] = React.useState({ role: 'admin' }) // Default for dev
-  return { user, isAuthenticated: !!user }
+  const token = localStorage.getItem('token')
+  const userJson = localStorage.getItem('user')
+  const user = userJson ? JSON.parse(userJson) : null
+  
+  return { user, isAuthenticated: !!token }
+}
+
+const ProtectedRoute = ({ children, role }) => {
+  const { user, isAuthenticated } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (role && user?.role !== role) return <Navigate to="/" replace />
+  return children
 }
 
 const App = () => {
@@ -28,9 +37,18 @@ const App = () => {
       <Suspense fallback={<div className="loading-screen">Carregando...</div>}>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/seller/terminal" element={<SellerSales />} />
           
-          <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
+          <Route path="/seller/terminal" element={
+            <ProtectedRoute role="seller">
+              <SellerSales />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/" element={
+            <ProtectedRoute role="admin">
+              <Layout />
+            </ProtectedRoute>
+          }>
             <Route index element={<Dashboard />} />
             <Route path="spaces" element={<AdSpaces />} />
             <Route path="sales" element={<Sales />} />

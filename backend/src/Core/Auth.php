@@ -8,7 +8,7 @@ class Auth {
 
     public static function generateToken(array $payload): string {
         $header = json_encode(['alg' => 'HS256', 'typ' => 'JWT']);
-        $payload['exp'] = time() + (86400 * 7); // 7 days
+        $payload['exp'] = time() + (3600 * 8); // 8 hours
         $payload_json = json_encode($payload);
 
         $base64Header = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
