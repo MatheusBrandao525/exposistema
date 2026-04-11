@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { TrendingUp, Package, Clock, CheckCircle2 } from 'lucide-react'
+import api from '../api'
 
 const StatCard = ({ title, value, icon, color, trend }) => (
   <div className="glass stat-card animate-fade">
@@ -31,6 +32,41 @@ const StatCard = ({ title, value, icon, color, trend }) => (
 )
 
 const Dashboard = () => {
+  const [stats, setStats] = useState({
+    total_revenue: 0,
+    total_sales: 0,
+    total_clients: 0,
+    available_spaces: 0
+  })
+  const [recentSales, setRecentSales] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, salesRes] = await Promise.all([
+          api.get('/stats'),
+          api.get('/sales')
+        ])
+        
+        const statsData = await statsRes.json()
+        const salesData = await salesRes.json()
+        
+        setStats(statsData)
+        setRecentSales(salesData.slice(0, 5)) // Pegar as 5 últimas
+      } catch (error) {
+        console.error("Erro ao buscar dados do dashboard:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+  }
+
   return (
     <div className="dashboard-content">
       <header className="page-header">
@@ -39,10 +75,34 @@ const Dashboard = () => {
       </header>
 
       <section className="stats-grid">
-        <StatCard title="Total Vendido" value="R$ 145.200,80" icon={<TrendingUp />} color="bg-amber" trend="+12.5%" />
-        <StatCard title="Espaços Ocupados" value="48 / 60" icon={<Package />} color="bg-blue" trend="80%" />
-        <StatCard title="Pagamentos Pendentes" value="12" icon={<Clock />} color="bg-rose" trend="R$ 14.500" />
-        <StatCard title="Vendas Hoje" value="03" icon={<CheckCircle2 />} color="bg-emerald" trend="+2" />
+        <StatCard 
+          title="Total Vendido" 
+          value={formatCurrency(stats.total_revenue)} 
+          icon={<TrendingUp />} 
+          color="bg-amber" 
+          trend="Total Pago" 
+        />
+        <StatCard 
+          title="Vendas Realizadas" 
+          value={stats.total_sales} 
+          icon={<Package />} 
+          color="bg-blue" 
+          trend="Total Geral" 
+        />
+        <StatCard 
+          title="Clientes Cadastrados" 
+          value={stats.total_clients} 
+          icon={<Clock />} 
+          color="bg-rose" 
+          trend="Base Ativa" 
+        />
+        <StatCard 
+          title="Espaços Disponíveis" 
+          value={stats.available_spaces} 
+          icon={<CheckCircle2 />} 
+          color="bg-emerald" 
+          trend="Prontos para Venda" 
+        />
       </section>
 
       <section className="recent-activity">
@@ -52,25 +112,31 @@ const Dashboard = () => {
             <thead>
               <tr>
                 <th>Cliente</th>
-                <th>Espaço</th>
-                <th>Valor</th>
                 <th>Status</th>
+                <th>Valor</th>
+                <th>Data</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>AgroForte S.A.</td>
-                <td>Banner Arena A1</td>
-                <td>R$ 4.500,00</td>
-                <td><span className="badge badge-success">Pago</span></td>
-              </tr>
-              <tr>
-                <td>Mercado Central</td>
-                <td>Telão Principal</td>
-                <td>R$ 12.000,00</td>
-                <td><span className="badge badge-warning">Pendente</span></td>
-              </tr>
-              {/* More rows... */}
+              {recentSales.map((sale) => (
+                <tr key={sale.id}>
+                  <td>{sale.client_name}</td>
+                  <td>
+                    <span className={`badge ${sale.status === 'paid' ? 'badge-success' : 'badge-warning'}`}>
+                      {sale.status === 'paid' ? 'Pago' : 'Pendente'}
+                    </span>
+                  </td>
+                  <td>{formatCurrency(sale.total_price)}</td>
+                  <td>{new Date(sale.created_at).toLocaleDateString('pt-BR')}</td>
+                </tr>
+              ))}
+              {recentSales.length === 0 && !loading && (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                    Nenhuma venda registrada ainda.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

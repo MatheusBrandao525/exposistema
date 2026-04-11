@@ -19,7 +19,7 @@ class HomeController extends Controller
     public function stats(): void
     {
         $db = Database::getConnection();
-        $revenue = $db->query("SELECT SUM(total_price) FROM sales WHERE status = 'paid'")->fetchColumn() ?: 0;
+        $revenue = $db->query("SELECT SUM(negotiated_price) FROM sales WHERE status = 'paid'")->fetchColumn() ?: 0;
         $count = $db->query("SELECT COUNT(*) FROM sales")->fetchColumn() ?: 0;
         $clients = $db->query("SELECT COUNT(*) FROM clients")->fetchColumn() ?: 0;
         $spaces = $db->query("SELECT COUNT(*) FROM ad_spaces WHERE status = 'available'")->fetchColumn() ?: 0;

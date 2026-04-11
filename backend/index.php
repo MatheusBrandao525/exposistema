@@ -1,16 +1,22 @@
+<?php
+error_reporting(0);
+ini_set('display_errors', 0);
+
 require_once __DIR__ . '/src/Core/Env.php';
 require_once __DIR__ . '/src/Core/Config.php';
-
 App\Core\Config::init();
 
-header('Access-Control-Allow-Origin: ' . App\Core\Config::getCorsOrigin());
+header("Access-Control-Allow-Origin: " . App\Core\Config::getCorsOrigin());
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Content-Type: application/json');
+header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
     exit;
 }
+
+header('Content-Type: application/json');
 
 // Simple PSR-4 Autoloader
 spl_autoload_register(function ($class) {
@@ -69,7 +75,7 @@ $router->add('PUT', '/users/{id}', 'UserController@update', true);
 $router->add('DELETE', '/users/{id}', 'UserController@delete', true);
 
 // Settings
-$router->add('GET', '/settings', 'SettingController@index', true);
+$router->add('GET', '/settings', 'SettingController@index');
 $router->add('POST', '/settings', 'SettingController@store', true);
 
 // Types
@@ -79,5 +85,10 @@ $router->add('DELETE', '/types/{id}', 'TypeController@delete', true);
 
 // Stats
 $router->add('GET', '/stats', 'HomeController@stats', true);
+
+// Financial
+$router->add('GET', '/financial', 'FinancialController@index', true);
+$router->add('PUT', '/financial/{id}', 'FinancialController@updateStatus', true);
+$router->add('GET', '/financial/stats', 'FinancialController@stats', true);
 
 $router->handle();

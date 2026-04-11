@@ -2,7 +2,9 @@
 namespace App\Core;
 
 class Auth {
-    private static string $secret = 'exposistema-secret-key-2026';
+    private static function getSecret(): string {
+        return Config::getJwtSecret();
+    }
 
     public static function generateToken(array $payload): string {
         $header = json_encode(['alg' => 'HS256', 'typ' => 'JWT']);
@@ -12,7 +14,7 @@ class Auth {
         $base64Header = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
         $base64Payload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload_json));
 
-        $signature = hash_hmac('sha256', $base64Header . "." . $base64Payload, self::$secret, true);
+        $signature = hash_hmac('sha256', $base64Header . "." . $base64Payload, self::getSecret(), true);
         $base64Signature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
 
         return $base64Header . "." . $base64Payload . "." . $base64Signature;
@@ -26,7 +28,7 @@ class Auth {
 
         list($header, $payload, $signature) = $parts;
 
-        $validSignature = hash_hmac('sha256', $header . "." . $payload, self::$secret, true);
+        $validSignature = hash_hmac('sha256', $header . "." . $payload, self::getSecret(), true);
         $base64ValidSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($validSignature));
 
         if ($signature !== $base64ValidSignature) return null;

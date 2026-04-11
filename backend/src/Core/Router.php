@@ -22,7 +22,7 @@ class Router
     {
         $request_uri = $_SERVER['REQUEST_URI'];
         $path = parse_url($request_uri, PHP_URL_PATH);
-        $path = str_replace(Config::BASE_PATH, '', $path);
+        $path = str_replace(Config::getBasePath(), '', $path);
         if ($path === '' || $path === '/') {
             $path = '/';
         }

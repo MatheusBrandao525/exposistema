@@ -70,6 +70,11 @@ class SaleController extends Controller
             }
 
             $this->db->commit();
+
+            // Gerar parcela automática para a venda
+            $this->db->prepare("INSERT INTO sale_installments (sale_id, installment_number, amount, due_date, status) VALUES (?, 1, ?, ?, ?)")
+                 ->execute([$sale_id, $data['total_price'], date('Y-m-d'), 'pending']);
+
             $this->jsonResponse(['success' => true, 'id' => $sale_id]);
         } catch (Exception $e) {
             $this->db->rollBack();
