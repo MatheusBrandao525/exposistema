@@ -104,10 +104,13 @@ const Sales = () => {
       </head>
       <body>
         <div class="container">
-          <div class="header">
-            <div>
-              <h1>EXPOSISTEMA</h1>
-              <p>Comprovante de Operação Financeira</p>
+          <div className="header">
+            <div style="display: flex; align-items: center; gap: 20px;">
+              <img src="/logo.png" style="height: 80px; width: auto;" />
+              <div>
+                <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXPOVALE APRF</h1>
+                <p style="margin: 5px 0 0; font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase;">Comprovante de Operação Financeira</p>
+              </div>
             </div>
             <div class="id-badge">Controle #${sale.id.toString().padStart(4, '0')}</div>
           </div>

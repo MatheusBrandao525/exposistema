@@ -42,8 +42,7 @@ export const Layout = () => {
       {/* Sidebar */}
       <aside className={`sidebar glass ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
-          <div className="brand-dot"></div>
-          <h1>{eventName}</h1>
+          <img src="/logo.png" alt="Expovale 2026" className="main-logo" />
         </div>
 
         <nav className="nav-menu">
@@ -96,24 +95,16 @@ export const Layout = () => {
         .sidebar-brand {
           display: flex;
           align-items: center;
-          gap: 12px;
-          margin-bottom: 48px;
-          padding-left: 12px;
+          justify-content: center;
+          margin-bottom: 40px;
+          padding: 10px;
         }
 
-        .brand-dot {
-          width: 8px;
-          height: 8px;
-          background: var(--primary);
-          border-radius: 50%;
-          box-shadow: 0 0 10px var(--primary-glow);
-        }
-
-        .sidebar-brand h1 {
-          font-size: 20px;
-          letter-spacing: 0.15em;
-          color: var(--text-white);
-          font-weight: 800;
+        .main-logo {
+          width: 100%;
+          max-width: 200px;
+          height: auto;
+          filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.1));
         }
 
         .nav-menu {

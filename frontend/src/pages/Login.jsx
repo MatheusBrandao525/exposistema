@@ -43,9 +43,8 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card glass animate-fade">
         <div className="login-header">
-          <div className="logo-icon">E</div>
-          <h1>ExpoSistema</h1>
-          <p>Seja bem-vindo de volta.</p>
+          <img src="/logo.png" alt="Expovale 2026" className="login-logo" />
+          <p>Autenticação de Acesso</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -87,22 +86,22 @@ const Login = () => {
           padding: 40px;
           text-align: center;
         }
-        .logo-icon {
-          width: 48px;
-          height: 48px;
-          background: var(--primary);
-          color: white;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 800;
-          font-size: 24px;
-          margin: 0 auto 20px;
-          box-shadow: 0 8px 16px rgba(245, 158, 11, 0.3);
+        .login-logo {
+          width: 100%;
+          max-width: 280px;
+          height: auto;
+          margin: 0 auto 32px;
+          display: block;
+          filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
         }
-        .login-header h1 { font-size: 28px; margin-bottom: 8px; }
-        .login-header p { color: var(--text-muted); margin-bottom: 32px; }
+        .login-header p { 
+          color: var(--text-dim); 
+          margin-bottom: 32px; 
+          text-transform: uppercase;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.15em;
+        }
         .login-form { display: flex; flex-direction: column; gap: 16px; }
         .input-group {
           position: relative;
