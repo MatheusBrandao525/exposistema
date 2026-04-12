@@ -1,6 +1,7 @@
 import React from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Image, ShoppingCart, Users, DollarSign, Settings, LogOut, Menu, X } from 'lucide-react'
+import api from '../api'
 
 export const Layout = () => {
   const [isSidebarOpen, setSidebarOpen] = React.useState(false)
@@ -8,7 +9,7 @@ export const Layout = () => {
   const navigate = useNavigate()
 
   React.useEffect(() => {
-    fetch('http://localhost:8000/api/settings')
+    api.get('/settings')
       .then(res => res.json())
       .then(data => {
         if (data && data.event_name) setEventName(data.event_name)

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Mail, ArrowRight } from 'lucide-react'
+import api from '../api'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -13,12 +14,7 @@ const Login = () => {
     setLoading(true)
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-      const res = await fetch(`${apiUrl}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
+      const res = await api.post('/login', { email, password })
       const data = await res.json()
       
       if (data.success) {
@@ -50,11 +46,11 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
             <Mail size={18} />
-            <input type="email" placeholder="E-mail" required defaultValue="admin@admin.com" />
+            <input type="email" placeholder="E-mail" required />
           </div>
           <div className="input-group">
             <Lock size={18} />
-            <input type="password" placeholder="Senha" required defaultValue="password" />
+            <input type="password" placeholder="Senha" required />
           </div>
 
           <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
