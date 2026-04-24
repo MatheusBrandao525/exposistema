@@ -24,6 +24,7 @@ class UserController extends Controller
     {
         $this->requireAdmin();
         $data = $this->getPostData();
+        \App\Core\Logger::log("Tentativa de criar usuário", $data);
         
         try {
             $sql = "INSERT INTO users (name, email, password, role, seller_function) VALUES (?, ?, ?, ?, ?)";

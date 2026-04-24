@@ -2,6 +2,9 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+require_once __DIR__ . '/src/Core/Logger.php';
+\App\Core\Logger::log("Requisição recebida: " . $_SERVER['REQUEST_METHOD'] . " " . $_SERVER['REQUEST_URI']);
+
 require_once __DIR__ . '/src/Core/Env.php';
 require_once __DIR__ . '/src/Core/Config.php';
 App\Core\Config::init();
