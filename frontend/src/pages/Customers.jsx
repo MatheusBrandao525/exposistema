@@ -7,7 +7,7 @@ const Customers = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingClient, setEditingClient] = useState(null)
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', company: '' })
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', company: '', is_partner: false })
 
   useEffect(() => {
     fetchClients()
@@ -22,10 +22,16 @@ const Customers = () => {
   const handleOpenModal = (client = null) => {
     if (client) {
       setEditingClient(client)
-      setFormData({ name: client.name, email: client.email || '', phone: client.phone || '', company: client.company || '' })
+      setFormData({ 
+        name: client.name, 
+        email: client.email || '', 
+        phone: client.phone || '', 
+        company: client.company || '',
+        is_partner: !!client.is_partner
+      })
     } else {
       setEditingClient(null)
-      setFormData({ name: '', email: '', phone: '', company: '' })
+      setFormData({ name: '', email: '', phone: '', company: '', is_partner: false })
     }
     setShowModal(true)
   }
@@ -112,6 +118,11 @@ const Customers = () => {
                   <div className="flex-column gap-4">
                     {client.email && <span className="flex align-center gap-6 text-xs color-muted"><Mail size={12}/> {client.email}</span>}
                     {client.phone && <span className="flex align-center gap-6 text-xs color-muted"><Phone size={12}/> {client.phone}</span>}
+                    {client.is_partner ? (
+                      <span className="badge-partner-mini mt-4">SÓCIO</span>
+                    ) : (
+                      <span className="badge-standard-mini mt-4">COMUM</span>
+                    )}
                   </div>
                 </td>
                 <td className="text-right pr-32">
@@ -152,6 +163,16 @@ const Customers = () => {
                 <label>E-mail</label>
                 <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
               </div>
+              <div className="form-group flex align-center gap-12 mt-4">
+                <input 
+                  type="checkbox" 
+                  id="is_partner"
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                  checked={formData.is_partner} 
+                  onChange={e => setFormData({...formData, is_partner: e.target.checked})} 
+                />
+                <label htmlFor="is_partner" style={{ cursor: 'pointer', marginBottom: 0 }}>Este cliente é um Sócio (20% de desconto)</label>
+              </div>
               <div className="modal-actions mt-12 flex justify-end gap-12">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
                 <button type="submit" className="btn btn-primary">{editingClient ? 'Salvar Alterações' : 'Cadastrar Cliente'}</button>
@@ -191,6 +212,8 @@ const Customers = () => {
         .custom-table th { background: rgba(255,255,255,0.01); text-align: left; padding: 20px 24px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.1em; }
         .custom-table td { padding: 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .row-hover:hover { background: rgba(255,255,255,0.02); }
+        .badge-partner-mini { font-size: 9px; font-weight: 800; background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
+        .badge-standard-mini { font-size: 9px; font-weight: 800; background: rgba(255,255,255,0.05); color: var(--text-muted); padding: 2px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
       `}</style>
     </div>
   )

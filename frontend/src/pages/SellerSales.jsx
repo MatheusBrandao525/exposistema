@@ -72,7 +72,14 @@ const SellerSales = () => {
     setCart(cart.filter(item => item.id !== id))
   }
 
-  const getTotal = () => cart.reduce((acc, item) => acc + (item.base_price * item.quantity), 0)
+  const getItemPrice = (item) => {
+    if (selectedClient?.is_partner && item.allows_discount) {
+      return item.base_price * 0.8
+    }
+    return item.base_price
+  }
+
+  const getTotal = () => cart.reduce((acc, item) => acc + (getItemPrice(item) * item.quantity), 0)
 
   const [paymentMethod, setPaymentMethod] = useState('pix')
 
@@ -89,7 +96,7 @@ const SellerSales = () => {
       event_id: 1, // Default event
       total_price: getTotal(),
       payment_method: paymentMethod,
-      items: cart.map(item => ({ id: item.id, price: item.base_price, quantity: item.quantity }))
+      items: cart.map(item => ({ id: item.id, price: getItemPrice(item), quantity: item.quantity }))
     }
 
     try {
@@ -254,6 +261,11 @@ const SellerSales = () => {
                            <span className="text-white opacity-40 font-bold min-w-60">Contato:</span>
                            <span className="text-white opacity-80">{selectedClient?.email}</span>
                         </div>
+                        {selectedClient?.is_partner && (
+                          <div className="flex align-center gap-6 mt-4">
+                             <div className="badge-partner">SÓCIO ATIVO - 20% OFF</div>
+                          </div>
+                        )}
                       </div>
                    </div>
                 </div>
@@ -268,7 +280,16 @@ const SellerSales = () => {
                           <span className="text-xs color-muted block font-medium">Serviço de Mídia & Publicidade</span>
                         </div>
                         <div className="flex-column align-end gap-16">
-                           <strong className="text-lg color-primary font-black">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.base_price)}</strong>
+                           <div className="flex-column align-end">
+                              {selectedClient?.is_partner && item.allows_discount && (
+                                <span className="text-xs color-muted line-through opacity-50">
+                                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.base_price)}
+                                </span>
+                              )}
+                              <strong className="text-lg color-primary font-black">
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getItemPrice(item))}
+                              </strong>
+                           </div>
                            <button className="remove-icon-btn flex align-center gap-8" onClick={() => removeFromCart(item.id)}>
                               <Trash2 size={16}/> <span className="text-tiny font-black">REMOVER</span>
                            </button>
@@ -469,6 +490,8 @@ const SellerSales = () => {
         .opacity-40 { opacity: 0.4; }
         .font-bold { font-weight: 700; }
         .gap-6 { gap: 6px; }
+        .line-through { text-decoration: line-through; }
+        .badge-partner { background: #10b981; color: black; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; }
       `}</style>
     </div>
   )

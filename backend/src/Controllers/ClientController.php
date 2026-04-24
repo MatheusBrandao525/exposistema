@@ -23,12 +23,13 @@ class ClientController extends Controller
     {
         \App\Core\Auth::checkRole(['admin']);
         $data = $this->getPostData();
-        $sql = "INSERT INTO clients (name, phone, company, email) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO clients (name, phone, company, email, is_partner) VALUES (?, ?, ?, ?, ?)";
         $this->db->prepare($sql)->execute([
             $data['name'], 
             $data['phone'] ?? null, 
             $data['company'] ?? null, 
-            $data['email'] ?? null
+            $data['email'] ?? null,
+            $data['is_partner'] ?? false
         ]);
         $this->jsonResponse(['success' => true, 'id' => $this->db->lastInsertId()]);
     }
@@ -37,12 +38,13 @@ class ClientController extends Controller
     {
         \App\Core\Auth::checkRole(['admin']);
         $data = $this->getPostData();
-        $sql = "UPDATE clients SET name = ?, phone = ?, company = ?, email = ? WHERE id = ?";
+        $sql = "UPDATE clients SET name = ?, phone = ?, company = ?, email = ?, is_partner = ? WHERE id = ?";
         $this->db->prepare($sql)->execute([
             $data['name'], 
             $data['phone'], 
             $data['company'], 
             $data['email'], 
+            $data['is_partner'] ?? false,
             $id
         ]);
         $this->jsonResponse(['success' => true]);
