@@ -2,6 +2,8 @@
 
 namespace App\Core;
 
+use App\Core\Auth;
+
 class Controller
 {
     protected function jsonResponse(array $data, int $status = 200): void
@@ -17,9 +19,8 @@ class Controller
         return json_decode(file_get_contents('php://input'), true) ?? [];
     }
 
-    protected function requireAdmin(): void
+    public function requireAdmin(): void
     {
         Auth::checkRole(['admin']);
     }
 }
-

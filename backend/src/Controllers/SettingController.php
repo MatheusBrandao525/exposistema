@@ -22,7 +22,7 @@ class SettingController extends Controller
 
     public function store(): void
     {
-        $this->requireAdmin();
+        \App\Core\Auth::checkRole(['admin']);
         $data = $this->getPostData();
         foreach($data as $key => $value) {
             $this->db->prepare("INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?")->execute([$key, $value, $value]);

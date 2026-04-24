@@ -1,9 +1,6 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-require_once __DIR__ . '/src/Core/Logger.php';
-\App\Core\Logger::log("Requisição recebida: " . $_SERVER['REQUEST_METHOD'] . " " . $_SERVER['REQUEST_URI']);
+error_reporting(0);
+ini_set('display_errors', 0);
 
 require_once __DIR__ . '/src/Core/Env.php';
 require_once __DIR__ . '/src/Core/Config.php';
@@ -94,5 +91,9 @@ $router->add('GET', '/stats', 'HomeController@stats', true);
 $router->add('GET', '/financial', 'FinancialController@index', true);
 $router->add('PUT', '/financial/{id}', 'FinancialController@updateStatus', true);
 $router->add('GET', '/financial/stats', 'FinancialController@stats', true);
+
+$router->add('GET', '/update-db-schema-2026', function() {
+    require_once __DIR__ . '/scratch/update_db.php';
+});
 
 $router->handle();

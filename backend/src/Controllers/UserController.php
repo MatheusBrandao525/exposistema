@@ -15,14 +15,14 @@ class UserController extends Controller
 
     public function index(): void
     {
-        $this->requireAdmin();
+        \App\Core\Auth::checkRole(['admin', 'treasurer']);
         $stmt = $this->db->query("SELECT id, name, email, role, seller_function, created_at FROM users ORDER BY name ASC");
         $this->jsonResponse($stmt->fetchAll());
     }
 
     public function store(): void
     {
-        $this->requireAdmin();
+        \App\Core\Auth::checkRole(['admin']);
         $data = $this->getPostData();
         \App\Core\Logger::log("Tentativa de criar usuário", $data);
         
@@ -50,7 +50,7 @@ class UserController extends Controller
 
     public function update(int $id): void
     {
-        $this->requireAdmin();
+        \App\Core\Auth::checkRole(['admin']);
         $data = $this->getPostData();
         
         try {

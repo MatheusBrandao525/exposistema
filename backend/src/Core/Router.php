@@ -38,14 +38,22 @@ class Router
                 }
 
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
-                [$controllerName, $action] = explode('@', $route['handler']);
-                $controllerClass = "App\\Controllers\\$controllerName";
                 
-                if (class_exists($controllerClass)) {
-                    $controller = new $controllerClass();
-                    if (method_exists($controller, $action)) {
-                        call_user_func_array([$controller, $action], $params);
-                        return;
+                if (is_callable($route['handler'])) {
+                    call_user_func_array($route['handler'], $params);
+                    return;
+                }
+
+                if (is_string($route['handler']) && strpos($route['handler'], '@') !== false) {
+                    [$controllerName, $action] = explode('@', $route['handler']);
+                    $controllerClass = "App\\Controllers\\$controllerName";
+                    
+                    if (class_exists($controllerClass)) {
+                        $controller = new $controllerClass();
+                        if (method_exists($controller, $action)) {
+                            call_user_func_array([$controller, $action], $params);
+                            return;
+                        }
                     }
                 }
             }
