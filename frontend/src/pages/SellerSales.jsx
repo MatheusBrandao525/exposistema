@@ -45,14 +45,17 @@ const SellerSales = () => {
       } else {
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         if (user.role !== 'admin' && user.seller_function) {
-           const allowedFunctions = user.seller_function.split(',').map(f => f.trim().toLowerCase());
+           // Função para remover acentos e normalizar texto
+           const normalize = (str) => (str || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+           
+           const allowedFunctions = user.seller_function.split(',').map(f => normalize(f));
            data = (data || []).filter(product => {
-             const typeName = (product.type_name || '').trim().toLowerCase();
-             // Verifica se o nome da categoria bate ou se uma é o plural da outra (simples)
+             const typeName = normalize(product.type_name);
              return allowedFunctions.some(func => 
                typeName === func || 
                typeName === func + 's' || 
-               func === typeName + 's'
+               func === typeName + 's' ||
+               typeName.includes(func) // Permite busca parcial (ex: "Mesas" dentro de "Mesas de rodapé")
              );
            });
         }
