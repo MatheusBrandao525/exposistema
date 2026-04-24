@@ -45,8 +45,16 @@ const SellerSales = () => {
       } else {
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         if (user.role !== 'admin' && user.seller_function) {
-           const allowedFunctions = user.seller_function.split(',').map(f => f.trim());
-           data = (data || []).filter(product => allowedFunctions.includes(product.type_name));
+           const allowedFunctions = user.seller_function.split(',').map(f => f.trim().toLowerCase());
+           data = (data || []).filter(product => {
+             const typeName = (product.type_name || '').trim().toLowerCase();
+             // Verifica se o nome da categoria bate ou se uma é o plural da outra (simples)
+             return allowedFunctions.some(func => 
+               typeName === func || 
+               typeName === func + 's' || 
+               func === typeName + 's'
+             );
+           });
         }
         setProducts(data || [])
       }
