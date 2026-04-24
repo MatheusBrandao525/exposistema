@@ -21,6 +21,7 @@ class ClientController extends Controller
 
     public function store(): void
     {
+        $this->requireAdmin();
         $data = $this->getPostData();
         $sql = "INSERT INTO clients (name, phone, company, email) VALUES (?, ?, ?, ?)";
         $this->db->prepare($sql)->execute([
@@ -34,6 +35,7 @@ class ClientController extends Controller
 
     public function update(int $id): void
     {
+        $this->requireAdmin();
         $data = $this->getPostData();
         $sql = "UPDATE clients SET name = ?, phone = ?, company = ?, email = ? WHERE id = ?";
         $this->db->prepare($sql)->execute([
@@ -48,6 +50,7 @@ class ClientController extends Controller
 
     public function delete(int $id): void
     {
+        $this->requireAdmin();
         $this->db->prepare("DELETE FROM clients WHERE id = ?")->execute([$id]);
         $this->jsonResponse(['success' => true]);
     }

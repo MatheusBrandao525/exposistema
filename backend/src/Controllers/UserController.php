@@ -15,12 +15,14 @@ class UserController extends Controller
 
     public function index(): void
     {
+        $this->requireAdmin();
         $stmt = $this->db->query("SELECT id, name, email, role, seller_function, created_at FROM users ORDER BY name ASC");
         $this->jsonResponse($stmt->fetchAll());
     }
 
     public function store(): void
     {
+        $this->requireAdmin();
         $data = $this->getPostData();
         $sql = "INSERT INTO users (name, email, password, role, seller_function) VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
@@ -36,6 +38,7 @@ class UserController extends Controller
 
     public function update(int $id): void
     {
+        $this->requireAdmin();
         $data = $this->getPostData();
         if (!empty($data['password'])) {
             $sql = "UPDATE users SET name = ?, email = ?, role = ?, seller_function = ?, password = ? WHERE id = ?";
@@ -62,6 +65,7 @@ class UserController extends Controller
 
     public function delete(int $id): void
     {
+        $this->requireAdmin();
         $this->db->prepare("DELETE FROM users WHERE id = ?")->execute([$id]);
         $this->jsonResponse(['success' => true]);
     }

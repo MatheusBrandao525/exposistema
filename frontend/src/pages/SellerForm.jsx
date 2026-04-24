@@ -22,6 +22,7 @@ const SellerForm = () => {
     'Stands',
     'Camarote',
     'Espaços publicitários',
+    'Tesoureiro',
     'Administrador Geral'
   ]
 
@@ -170,6 +171,7 @@ const SellerForm = () => {
                         onChange={e => setFormData({...formData, role: e.target.value})}
                       >
                          <option value="seller">Vendedor (Mobile Terminal)</option>
+                         <option value="treasurer">Tesoureiro (Acesso Leitura)</option>
                          <option value="admin">Administrador (Master App)</option>
                       </select>
                    </div>

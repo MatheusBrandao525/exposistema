@@ -16,4 +16,10 @@ class Controller
     {
         return json_decode(file_get_contents('php://input'), true) ?? [];
     }
+
+    protected function requireAdmin(): void
+    {
+        Auth::checkRole(['admin']);
+    }
 }
+

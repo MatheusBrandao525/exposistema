@@ -22,10 +22,16 @@ const useAuth = () => {
   return { user, isAuthenticated: !!token }
 }
 
-const ProtectedRoute = ({ children, role }) => {
+const ProtectedRoute = ({ children, roles }) => {
   const { user, isAuthenticated } = useAuth()
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (role && user?.role !== role) return <Navigate to="/" replace />
+  
+  const userRole = user?.role
+  if (roles && !roles.includes(userRole)) {
+    // Redirect based on role if unauthorized for this specific route
+    if (userRole === 'seller') return <Navigate to="/seller/terminal" replace />
+    return <Navigate to="/" replace />
+  }
   return children
 }
 
@@ -39,30 +45,57 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           
           <Route path="/seller/terminal" element={
-            <ProtectedRoute role="seller">
+            <ProtectedRoute roles={['seller']}>
               <SellerSales />
             </ProtectedRoute>
           } />
           
           <Route path="/" element={
-            <ProtectedRoute role="admin">
+            <ProtectedRoute roles={['admin', 'treasurer']}>
               <Layout />
             </ProtectedRoute>
           }>
             <Route index element={<Dashboard />} />
-            <Route path="spaces" element={<AdSpaces />} />
             <Route path="sales" element={<Sales />} />
-            <Route path="sellers" element={<Sellers />} />
-            <Route path="sellers/new" element={<SellerForm />} />
-            <Route path="sellers/edit/:id" element={<SellerForm />} />
-            <Route path="customers" element={<Customers />} />
             <Route path="financial" element={<Navigate to="/sales" />} />
-            <Route path="settings" element={<Settings />} />
+
+            {/* Admin Only Routes */}
+            <Route path="spaces" element={
+              <ProtectedRoute roles={['admin']}>
+                <AdSpaces />
+              </ProtectedRoute>
+            } />
+            <Route path="sellers" element={
+              <ProtectedRoute roles={['admin']}>
+                <Sellers />
+              </ProtectedRoute>
+            } />
+            <Route path="sellers/new" element={
+              <ProtectedRoute roles={['admin']}>
+                <SellerForm />
+              </ProtectedRoute>
+            } />
+            <Route path="sellers/edit/:id" element={
+              <ProtectedRoute roles={['admin']}>
+                <SellerForm />
+              </ProtectedRoute>
+            } />
+            <Route path="customers" element={
+              <ProtectedRoute roles={['admin']}>
+                <Customers />
+              </ProtectedRoute>
+            } />
+            <Route path="settings" element={
+              <ProtectedRoute roles={['admin']}>
+                <Settings />
+              </ProtectedRoute>
+            } />
           </Route>
         </Routes>
       </Suspense>
     </BrowserRouter>
   )
 }
+
 
 export default App

@@ -16,14 +16,18 @@ export const Layout = () => {
       })
   }, [])
 
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const userRole = user.role || 'admin'
+
   const navItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard size={18} strokeWidth={2.5} />, path: '/' },
-    { name: 'Espaços', icon: <Image size={18} strokeWidth={2.5} />, path: '/spaces' },
-    { name: 'Financeiro', icon: <DollarSign size={18} strokeWidth={2.5} />, path: '/sales' },
-    { name: 'Vendedores', icon: <Users size={18} strokeWidth={2.5} />, path: '/sellers' },
-    { name: 'Clientes', icon: <Users size={18} strokeWidth={2.5} />, path: '/customers' },
-    { name: 'Configurações', icon: <Settings size={18} strokeWidth={2.5} />, path: '/settings' },
-  ]
+    { name: 'Dashboard', icon: <LayoutDashboard size={18} strokeWidth={2.5} />, path: '/', roles: ['admin', 'treasurer'] },
+    { name: 'Espaços', icon: <Image size={18} strokeWidth={2.5} />, path: '/spaces', roles: ['admin'] },
+    { name: 'Financeiro', icon: <DollarSign size={18} strokeWidth={2.5} />, path: '/sales', roles: ['admin', 'treasurer'] },
+    { name: 'Vendedores', icon: <Users size={18} strokeWidth={2.5} />, path: '/sellers', roles: ['admin'] },
+    { name: 'Clientes', icon: <Users size={18} strokeWidth={2.5} />, path: '/customers', roles: ['admin'] },
+    { name: 'Configurações', icon: <Settings size={18} strokeWidth={2.5} />, path: '/settings', roles: ['admin'] },
+  ].filter(item => item.roles.includes(userRole))
+
 
   const handleLogout = () => {
     navigate('/login')

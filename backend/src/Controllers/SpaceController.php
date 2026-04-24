@@ -21,6 +21,7 @@ class SpaceController extends Controller
 
     public function store(): void
     {
+        $this->requireAdmin();
         $data = $this->getPostData();
         $sql = "INSERT INTO ad_spaces (event_id, ad_space_type_id, name, base_price, status) VALUES (?, ?, ?, ?, ?)";
         $this->db->prepare($sql)->execute([
@@ -35,6 +36,7 @@ class SpaceController extends Controller
 
     public function update(int $id): void
     {
+        $this->requireAdmin();
         $data = $this->getPostData();
         $sql = "UPDATE ad_spaces SET name = ?, ad_space_type_id = ?, base_price = ?, status = ? WHERE id = ?";
         $this->db->prepare($sql)->execute([
@@ -49,6 +51,7 @@ class SpaceController extends Controller
 
     public function delete(int $id): void
     {
+        $this->requireAdmin();
         $this->db->prepare("DELETE FROM ad_spaces WHERE id = ?")->execute([$id]);
         $this->jsonResponse(['success' => true]);
     }

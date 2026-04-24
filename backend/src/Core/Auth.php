@@ -58,4 +58,19 @@ class Auth {
             exit;
         }
     }
+
+    public static function checkRole(array $allowedRoles): void {
+        self::check();
+        $user = self::getUser();
+        if (!in_array($user['role'], $allowedRoles)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Acesso negado para este nível de permissão']);
+            exit;
+        }
+    }
+
+    public static function isAdmin(): bool {
+        $user = self::getUser();
+        return $user && $user['role'] === 'admin';
+    }
 }
