@@ -82,8 +82,12 @@ const Sellers = () => {
                   </div>
                 </td>
                 <td className="col-function">
-                   <div className="badge-pill-function">
-                      <Briefcase size={14} strokeWidth={2.5} /> {seller.seller_function}
+                   <div className="flex flex-wrap gap-8">
+                      {(seller.seller_function || 'Sem Função').split(',').map(func => (
+                        <div key={func} className="badge-pill-function">
+                           <Briefcase size={12} strokeWidth={2.5} /> {func}
+                        </div>
+                      ))}
                    </div>
                 </td>
                 <td className="col-status">
@@ -144,6 +148,10 @@ const Sellers = () => {
         .badge-pill-role { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid transparent; }
         .badge-pill-role.admin { background: rgba(56, 189, 248, 0.05); color: var(--accent); border-color: rgba(56, 189, 248, 0.1); }
         .badge-pill-role.seller { background: rgba(16, 185, 129, 0.05); color: var(--success); border-color: rgba(16, 185, 129, 0.1); }
+        
+        .flex-wrap { flex-wrap: wrap; }
+        .gap-8 { gap: 8px; }
+
 
         /* Actions */
         .premium-action-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }

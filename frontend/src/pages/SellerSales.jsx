@@ -38,10 +38,18 @@ const SellerSales = () => {
         : (query ? `/spaces/search?q=${query}` : '/spaces');
       
       const res = await api.get(endpoint)
-      const data = await res.json()
+      let data = await res.json()
       
-      if (step === 1) setClients(data || [])
-      else setProducts(data || [])
+      if (step === 1) {
+        setClients(data || [])
+      } else {
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        if (user.role !== 'admin' && user.seller_function) {
+           const allowedFunctions = user.seller_function.split(',').map(f => f.trim());
+           data = (data || []).filter(product => allowedFunctions.includes(product.type_name));
+        }
+        setProducts(data || [])
+      }
     } catch (err) {
       console.error("Erro ao buscar dados", err)
     } finally {

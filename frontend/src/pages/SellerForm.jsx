@@ -177,16 +177,30 @@ const SellerForm = () => {
                    </div>
                 </div>
                 <div className="hq-field flex-1">
-                   <label className="hq-label">Setor / Função Comercial</label>
-                   <div className="hq-input-box glass border p-24 rounded-20 flex align-center gap-20">
-                      <Briefcase size={22} className="color-dim" />
-                      <select 
-                        className="hq-input-clean hq-select"
-                        value={formData.seller_function} 
-                        onChange={e => setFormData({...formData, seller_function: e.target.value})}
-                      >
-                         {functions.map(f => <option key={f} value={f}>{f}</option>)}
-                      </select>
+                   <label className="hq-label">Setor / Funções Comerciais (Seleção Múltipla)</label>
+                   <div className="hq-functions-grid mt-16">
+                      {functions.map(f => {
+                         const isSelected = (formData.seller_function || '').split(',').includes(f);
+                         return (
+                            <div 
+                              key={f} 
+                              className={`hq-function-tag ${isSelected ? 'active' : ''}`}
+                              onClick={() => {
+                                 const current = (formData.seller_function || '').split(',').filter(x => x);
+                                 let next;
+                                 if (isSelected) {
+                                    next = current.filter(x => x !== f);
+                                 } else {
+                                    next = [...current, f];
+                                 }
+                                 setFormData({...formData, seller_function: next.join(',')});
+                              }}
+                            >
+                               <div className="checkbox-mini">{isSelected && <div className="check-inner" />}</div>
+                               <span>{f}</span>
+                            </div>
+                         )
+                      })}
                    </div>
                 </div>
              </div>
@@ -240,7 +254,18 @@ const SellerForm = () => {
         .hq-select { cursor: pointer; }
         .hq-select option { background: #0f172a; color: white; }
         
+        .hq-functions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        .hq-function-tag { background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 14px 20px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; }
+        .hq-function-tag:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); }
+        .hq-function-tag.active { border-color: var(--primary); background: rgba(251, 191, 36, 0.05); }
+        .checkbox-mini { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.1); border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .hq-function-tag.active .checkbox-mini { border-color: var(--primary); background: var(--primary); }
+        .check-inner { width: 8px; height: 8px; background: #000; border-radius: 1px; }
+        .hq-function-tag span { font-size: 13px; font-weight: 700; color: var(--text-muted); transition: 0.2s; }
+        .hq-function-tag.active span { color: white; }
+
         .border-b { border-bottom: 1px solid rgba(255,255,255,0.05); }
+
         .w-fit { width: fit-content; }
         .rounded-20 { border-radius: 20px; }
         
