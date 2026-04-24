@@ -40,23 +40,38 @@ class Auth {
     }
 
     public static function getUser(): ?array {
-        $headers = getallheaders();
-        $authHeader = $headers['Authorization'] ?? '';
+        $headers = self::getAllHeaders();
+        $authHeader = '';
+        foreach ($headers as $key => $value) {
+            if (strtolower($key) === 'authorization') {
+                $authHeader = $value;
+                break;
+            }
+        }
         $token = str_replace('Bearer ', '', $authHeader);
         return self::verifyToken($token);
     }
 
     public static function check(): void {
-        $headers = getallheaders();
-        $authHeader = $headers['Authorization'] ?? '';
-        $token = str_replace('Bearer ', '', $authHeader);
-
-        $user = self::verifyToken($token);
+        $user = self::getUser();
         if (!$user) {
             http_response_code(401);
             echo json_encode(['error' => 'Não autorizado']);
             exit;
         }
+    }
+
+    private static function getAllHeaders(): array {
+        if (function_exists('getallheaders')) {
+            return getallheaders();
+        }
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+            }
+        }
+        return $headers;
     }
 
     public static function checkRole(array $allowedRoles): void {

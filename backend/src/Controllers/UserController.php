@@ -24,43 +24,65 @@ class UserController extends Controller
     {
         $this->requireAdmin();
         $data = $this->getPostData();
-        $sql = "INSERT INTO users (name, email, password, role, seller_function) VALUES (?, ?, ?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            $data['name'], 
-            $data['email'], 
-            password_hash($data['password'], PASSWORD_DEFAULT), 
-            $data['role'] ?? 'seller',
-            $data['seller_function'] ?? null
-        ]);
-        $this->jsonResponse(['success' => true, 'id' => $this->db->lastInsertId()]);
+        
+        try {
+            $sql = "INSERT INTO users (name, email, password, role, seller_function) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $data['name'], 
+                $data['email'], 
+                password_hash($data['password'], PASSWORD_DEFAULT), 
+                $data['role'] ?? 'seller',
+                $data['seller_function'] ?? null
+            ]);
+            $this->jsonResponse(['success' => true, 'id' => $this->db->lastInsertId()]);
+        } catch (\PDOException $e) {
+            $error = $e->getMessage();
+            if (strpos($error, 'Duplicate entry') !== false) {
+                $error = 'Este e-mail já está sendo utilizado por outro colaborador.';
+            }
+            $this->jsonResponse(['success' => false, 'error' => $error], 400);
+        } catch (\Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function update(int $id): void
     {
         $this->requireAdmin();
         $data = $this->getPostData();
-        if (!empty($data['password'])) {
-            $sql = "UPDATE users SET name = ?, email = ?, role = ?, seller_function = ?, password = ? WHERE id = ?";
-            $this->db->prepare($sql)->execute([
-                $data['name'], 
-                $data['email'], 
-                $data['role'], 
-                $data['seller_function'], 
-                password_hash($data['password'], PASSWORD_DEFAULT), 
-                $id
-            ]);
-        } else {
-            $sql = "UPDATE users SET name = ?, email = ?, role = ?, seller_function = ? WHERE id = ?";
-            $this->db->prepare($sql)->execute([
-                $data['name'], 
-                $data['email'], 
-                $data['role'], 
-                $data['seller_function'], 
-                $id
-            ]);
+        
+        try {
+            if (!empty($data['password'])) {
+                $sql = "UPDATE users SET name = ?, email = ?, role = ?, seller_function = ?, password = ? WHERE id = ?";
+                $this->db->prepare($sql)->execute([
+                    $data['name'], 
+                    $data['email'], 
+                    $data['role'], 
+                    $data['seller_function'], 
+                    password_hash($data['password'], PASSWORD_DEFAULT), 
+                    $id
+                ]);
+            } else {
+                $sql = "UPDATE users SET name = ?, email = ?, role = ?, seller_function = ? WHERE id = ?";
+                $this->db->prepare($sql)->execute([
+                    $data['name'], 
+                    $data['email'], 
+                    $data['role'], 
+                    $data['seller_function'], 
+                    $id
+                ]);
+            }
+            $this->jsonResponse(['success' => true]);
+        } catch (\PDOException $e) {
+            $error = $e->getMessage();
+            if (strpos($error, 'Duplicate entry') !== false) {
+                $error = 'Este e-mail já está sendo utilizado por outro colaborador.';
+            }
+            $this->jsonResponse(['success' => false, 'error' => $error], 400);
+        } catch (\Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
-        $this->jsonResponse(['success' => true]);
     }
 
     public function delete(int $id): void
