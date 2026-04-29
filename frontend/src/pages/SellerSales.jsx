@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet, LogOut } from 'lucide-react'
+import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet, LogOut, History, Clock, AlertCircle, FileEdit, Repeat, Layers } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
@@ -14,6 +14,11 @@ const SellerSales = () => {
   const [cart, setCart] = useState([])
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [mySales, setMySales] = useState([])
+  const [updatingStatus, setUpdatingStatus] = useState(null)
+  const [historySearch, setHistorySearch] = useState('')
+  const [selectedStatusToUpdate, setSelectedStatusToUpdate] = useState({})
+  const [observations, setObservations] = useState('')
 
   useEffect(() => {
     fetchList()
@@ -68,6 +73,51 @@ const SellerSales = () => {
     }
   }
 
+  const fetchMySales = async () => {
+    setLoading(true)
+    try {
+      const res = await api.get('/sales/me')
+      const data = await res.json()
+      setMySales(data || [])
+    } catch (err) {
+      console.error("Erro ao buscar minhas vendas", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredHistory = mySales.filter(sale => 
+    sale.client_name?.toLowerCase().includes(historySearch.toLowerCase()) ||
+    sale.id.toString().includes(historySearch)
+  )
+
+  const handleUpdateStatus = async (saleId, status) => {
+    // Only proceed if the user actually clicked the final "Confirm" button
+    // This function will now be called by the confirm button
+    setUpdatingStatus(saleId)
+    try {
+      const res = await api.put(`/sales/${saleId}/status`, { status })
+      const data = await res.json()
+      if (data.success) {
+        fetchMySales()
+        // Clear selection
+        const newSelections = { ...selectedStatusToUpdate }
+        delete newSelections[saleId]
+        setSelectedStatusToUpdate(newSelections)
+      } else {
+        alert('Erro ao atualizar status: ' + (data.error || 'Falha desconhecida'))
+      }
+    } catch (err) {
+      alert('Erro ao conectar com o servidor')
+    } finally {
+      setUpdatingStatus(null)
+    }
+  }
+
+  const handleStatusSelect = (saleId, status) => {
+    setSelectedStatusToUpdate({ ...selectedStatusToUpdate, [saleId]: status })
+  }
+
   const filteredClients = clients
   const filteredProducts = products 
 
@@ -107,6 +157,7 @@ const SellerSales = () => {
       event_id: 1, // Default event
       total_price: getTotal(),
       payment_method: paymentMethod,
+      observations: observations,
       items: cart.map(item => ({ id: item.id, price: getItemPrice(item), quantity: item.quantity }))
     }
 
@@ -165,25 +216,29 @@ const SellerSales = () => {
       {/* Header */}
       <header className="mobile-header-top glass">
         <div className="header-content">
-          <div className="user-badge-mini">
-            <div className="avatar">V</div>
-            <span>Vendedor Logado</span>
+          <div className="flex align-center justify-between w-full">
+            <button 
+              onClick={() => { setStep(step === 4 ? 1 : 4); if (step !== 4) fetchMySales() }} 
+              className={`history-btn-premium ${step === 4 ? 'active' : ''}`}
+            >
+               {step === 4 ? <ShoppingCart size={16} /> : <History size={16} />}
+               <span>{step === 4 ? 'Vender' : 'Minhas Vendas'}</span>
+            </button>
+            <button onClick={handleLogout} className="logout-btn-premium">
+               <LogOut size={16} />
+            </button>
           </div>
-          <button onClick={handleLogout} className="logout-btn">
-             <LogOut size={16} />
-             <span>Sair</span>
-          </button>
-          <h1 className="text-2xl font-black">Terminal de Vendas</h1>
+          <h1 className="terminal-title">Terminal de Vendas</h1>
         </div>
       </header>
 
       {/* Progress Stepper */}
       <div className="stepper px-20">
-        <div className={`step-item ${step >= 1 ? 'active' : ''}`}>Cliente</div>
+        <div className={`step-item ${step >= 1 && step < 4 ? 'active' : ''}`}>Cliente</div>
         <div className="step-divider" />
-        <div className={`step-item ${step >= 2 ? 'active' : ''}`}>Produtos</div>
+        <div className={`step-item ${step >= 2 && step < 4 ? 'active' : ''}`}>Produtos</div>
         <div className="step-divider" />
-        <div className={`step-item ${step >= 3 ? 'active' : ''}`}>Revisão</div>
+        <div className={`step-item ${step >= 3 && step < 4 ? 'active' : ''}`}>Revisão</div>
       </div>
 
       <div className="content-scroll px-20 py-20">
@@ -324,6 +379,33 @@ const SellerSales = () => {
                            <Wallet size={24} />
                            <span>DINHEIRO</span>
                         </div>
+                        <div className={`pay-option ${paymentMethod === 'cheque' ? 'active' : ''}`} onClick={() => setPaymentMethod('cheque')}>
+                           <FileEdit size={24} />
+                           <span>CHEQUE</span>
+                        </div>
+                        <div className={`pay-option ${paymentMethod === 'haver' ? 'active' : ''}`} onClick={() => setPaymentMethod('haver')}>
+                           <Repeat size={24} />
+                           <span>HAVER</span>
+                        </div>
+                        <div className={`pay-option ${paymentMethod === 'misto' ? 'active' : ''}`} onClick={() => setPaymentMethod('misto')}>
+                           <Layers size={24} />
+                           <span>2 FORMAS</span>
+                        </div>
+                     </div>
+
+                     <div className="observation-box mt-20">
+                        <span className="text-xs uppercase font-black color-muted mb-8 block tracking-widest text-center">Observações</span>
+                        <textarea 
+                           className="glass w-full p-16 rounded-16 text-white text-sm" 
+                           placeholder={paymentMethod === 'misto' ? "Descreva aqui as duas formas de pagamento utilizadas..." : "Alguma observação importante para esta venda?"}
+                           rows="3"
+                           value={observations}
+                           onChange={(e) => setObservations(e.target.value)}
+                           style={{ border: paymentMethod === 'misto' && !observations ? '1px solid var(--error)' : '1px solid var(--border)', background: 'rgba(255,255,255,0.02)', outline: 'none' }}
+                        />
+                        {paymentMethod === 'misto' && !observations && (
+                           <span className="text-tiny color-error mt-4 block">Obrigatório descrever as formas de pagamento.</span>
+                        )}
                      </div>
                   </div>
                 </div>
@@ -336,6 +418,122 @@ const SellerSales = () => {
                     <strong className="text-4xl font-black text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getTotal())}</strong>
                 </div>
              </div>
+          </motion.div>
+        )}
+        {step === 4 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="step-container"
+          >
+            <div className="section-header mb-24">
+              <div className="flex-column">
+                <h3 className="text-2xl font-black text-white mb-4">Seu Histórico</h3>
+                <span className="text-xs color-muted font-bold tracking-widest uppercase">Gerencie suas vendas realizadas</span>
+              </div>
+            </div>
+
+            <div className="search-history-container mb-24">
+               <div className="input-group-mobile glass search-glow">
+                  <Search size={20} className="opacity-40" />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar por cliente ou código..." 
+                    value={historySearch}
+                    onChange={(e) => setHistorySearch(e.target.value)}
+                  />
+                  {historySearch && <X size={18} onClick={() => setHistorySearch('')} className="cursor-pointer opacity-40" />}
+               </div>
+            </div>
+
+            <div className="sales-history-list">
+              {filteredHistory.length > 0 ? filteredHistory.map((sale, idx) => (
+                <motion.div 
+                  key={sale.id} 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="premium-sale-card glass mb-20"
+                >
+                  <div className="card-header p-20 border-bottom">
+                    <div className="flex justify-between align-center mb-12">
+                       <span className="sale-id-badge">VENDA #{sale.id}</span>
+                       <span className={`status-pill ${sale.status}`}>
+                         {sale.status === 'pending' && 'Pendente'}
+                         {sale.status === 'paid' && 'Liquidado'}
+                         {sale.status === 'expired' && 'Expirado'}
+                         {sale.status === 'refused' && 'Recusado'}
+                         {sale.status === 'cancelled' && 'Cancelado'}
+                       </span>
+                    </div>
+                    <strong className="text-xl text-white block mb-4">{sale.client_name}</strong>
+                    <div className="flex align-center gap-6 opacity-60">
+                       <Clock size={12} className="color-primary" />
+                       <span className="text-xs font-medium">{new Date(sale.purchase_date || sale.created_at).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                  </div>
+
+                  <div className="card-body p-20 bg-alpha-2">
+                    <div className="items-preview mb-20">
+                       <span className="text-tiny color-muted uppercase font-black block mb-8 tracking-widest">Produtos / Espaços</span>
+                       <p className="text-sm text-white opacity-80 leading-relaxed italic">{sale.item_names || 'Nenhum detalhe disponível'}</p>
+                    </div>
+                    
+                    <div className="price-summary p-16 rounded-16 bg-white-alpha-3 flex justify-between align-center">
+                       <span className="text-xs font-bold color-muted">TOTAL RECEBIDO</span>
+                       <strong className="text-2xl color-primary font-black">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.total_price)}</strong>
+                    </div>
+
+                    <div className="status-control-section mt-24">
+                       <div className="flex align-center gap-8 mb-16">
+                          <div className="h-1 flex-1 bg-white-alpha-5 rounded-full"></div>
+                          <span className="text-tiny color-muted font-black uppercase tracking-widest">Alterar Status</span>
+                          <div className="h-1 flex-1 bg-white-alpha-5 rounded-full"></div>
+                       </div>
+                       
+                       <div className="status-actions-grid mb-16">
+                          {['paid', 'pending', 'expired', 'cancelled'].map(st => (
+                            <button 
+                              key={st}
+                              className={`status-action-btn ${st} ${selectedStatusToUpdate[sale.id] === st ? 'selected' : ''}`} 
+                              onClick={() => handleStatusSelect(sale.id, st)}
+                            >
+                              {st === 'paid' && 'Pago'}
+                              {st === 'pending' && 'Pendente'}
+                              {st === 'expired' && 'Expirado'}
+                              {st === 'cancelled' && 'Cancelado'}
+                            </button>
+                          ))}
+                       </div>
+
+                       <AnimatePresence>
+                         {selectedStatusToUpdate[sale.id] && selectedStatusToUpdate[sale.id] !== sale.status && (
+                           <motion.button 
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              className="btn btn-primary w-full py-16 font-black uppercase tracking-widest text-sm shadow-premium"
+                              onClick={() => handleUpdateStatus(sale.id, selectedStatusToUpdate[sale.id])}
+                              disabled={updatingStatus === sale.id}
+                           >
+                              {updatingStatus === sale.id ? 'Atualizando...' : 'Confirmar Alteração'}
+                           </motion.button>
+                         )}
+                       </AnimatePresence>
+                    </div>
+                  </div>
+                </motion.div>
+              )) : !loading && (
+                <div className="empty-state glass py-80">
+                  <div className="icon-circle mb-20">
+                     <AlertCircle size={40} className="opacity-20" />
+                  </div>
+                  <p className="color-muted font-medium">{historySearch ? 'Nenhum resultado para sua busca.' : 'Nenhuma venda registrada ainda.'}</p>
+                  {historySearch && <button className="btn-text mt-12" onClick={() => setHistorySearch('')}>Limpar busca</button>}
+                </div>
+              )}
+            </div>
+            <div className="pb-80"></div>
           </motion.div>
         )}
       </div>
@@ -356,7 +554,7 @@ const SellerSales = () => {
             {step === 2 ? (
               <button className="btn btn-primary" onClick={() => setStep(3)}>Revisar</button>
             ) : (
-              <button className="btn btn-primary" onClick={handleFinish} disabled={loading}>
+              <button className="btn btn-primary" onClick={handleFinish} disabled={loading || (paymentMethod === 'misto' && !observations)}>
                 {loading ? 'Processando...' : 'Finalizar Venda'}
               </button>
             ) }
@@ -381,12 +579,15 @@ const SellerSales = () => {
         .tracking-tighter { letter-spacing: -0.05em; }
         .tracking-widest { letter-spacing: 0.1em; }
 
-        .mobile-header-top { padding: 24px 20px; border-radius: 0 0 24px 24px; position: relative; }
-        .header-content { display: flex; flex-direction: column; gap: 8px; position: relative; }
-        .logout-btn { position: absolute; top: 0; right: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; color: var(--text-white); cursor: pointer; transition: 0.2s; font-size: 11px; font-weight: 700; margin-top: -4px; }
-        .logout-btn:hover { background: rgba(244, 63, 94, 0.1); border-color: var(--error); color: var(--error); }
-        .user-badge-mini { display: flex; align-items: center; gap: 8px; font-size: 12px; opacity: 0.7; }
-        .user-badge-mini .avatar { width: 24px; height: 24px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: black; font-size: 10px; }
+        .mobile-header-top { padding: 32px 20px 24px; border-radius: 0 0 32px 32px; position: relative; background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.8) 100%); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .header-content { display: flex; flex-direction: column; gap: 16px; position: relative; width: 100%; }
+        .terminal-title { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; background: linear-gradient(90deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logout-btn-premium { width: 44px; height: 44px; border-radius: 14px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; display: flex; align-items: center; justify-content: center; transition: 0.3s; cursor: pointer; }
+        .logout-btn-premium:active { transform: scale(0.9); }
+        .history-btn-premium { height: 44px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; transition: 0.3s; cursor: pointer; padding: 0 16px; }
+        .history-btn-premium.active { background: var(--primary); color: #000; border: none; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.2); }
+        .user-badge-mini { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .user-badge-mini .avatar { width: 28px; height: 28px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #000; font-size: 12px; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3); }
 
         .stepper { display: flex; align-items: center; gap: 10px; margin-top: 20px; padding-bottom: 5px; }
         .step-item { font-size: 12px; font-weight: 600; color: var(--text-muted); padding: 4px 12px; border-radius: 100px; border: 1px solid transparent; }
@@ -448,7 +649,7 @@ const SellerSales = () => {
         .remove-icon-btn { background: none; border: none; color: var(--error); opacity: 0.5; cursor: pointer; transition: 0.2s; font-size: 10px; font-weight: 800; text-transform: uppercase; }
         .remove-icon-btn:hover { opacity: 1; transform: translateX(5px); }
 
-        .payment-selector .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .payment-selector .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .pay-option { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; transition: 0.3s; color: var(--text-muted); }
         .pay-option span { font-size: 11px; font-weight: 700; }
         .pay-option.active { border-color: var(--primary); background: rgba(251, 191, 36, 0.1); color: var(--primary); box-shadow: 0 8px 20px rgba(245, 158, 11, 0.15); transform: translateY(-4px); }
@@ -487,6 +688,9 @@ const SellerSales = () => {
         .btn-primary.w-full { width: 100%; }
         .min-h-vh { min-height: 100vh; }
         .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .flex { display: flex; }
+        .align-center { align-items: center; }
         .w-full { width: 100%; }
         .rounded-16 { border-radius: 16px; }
         .opacity-50 { opacity: 0.5; }
@@ -503,6 +707,38 @@ const SellerSales = () => {
         .gap-6 { gap: 6px; }
         .line-through { text-decoration: line-through; }
         .badge-partner { background: #10b981; color: black; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; }
+        .color-error { color: #ef4444; }
+
+        /* Premium History Styles */
+        .premium-sale-card { border-radius: 28px; border: 1px solid rgba(255,255,255,0.06); background: linear-gradient(145deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); overflow: hidden; }
+        .sale-id-badge { background: rgba(255,255,255,0.05); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); letter-spacing: 0.05em; }
+        .status-pill { font-size: 10px; font-weight: 900; padding: 6px 14px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.02em; }
+        .status-pill.pending { background: rgba(245, 158, 11, 0.1); color: var(--primary); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .status-pill.paid { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-pill.expired { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .status-pill.cancelled { background: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
+        
+        .bg-alpha-2 { background: rgba(255,255,255,0.02); }
+        .bg-white-alpha-3 { background: rgba(255,255,255,0.03); }
+        .status-actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .status-action-btn { height: 48px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.03); color: var(--text-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; transition: 0.3s; cursor: pointer; }
+        .status-action-btn:active { transform: scale(0.96); }
+        .status-action-btn.paid:hover { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.4); color: #10b981; }
+        .status-action-btn.pending:hover { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.4); color: var(--primary); }
+        .status-action-btn.expired:hover { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.4); color: #ef4444; }
+        .status-action-btn.cancelled:hover { background: rgba(100, 116, 139, 0.1); border-color: rgba(100, 116, 139, 0.4); color: #94a3b8; }
+        .status-action-btn.selected { border-color: var(--primary); background: rgba(245, 158, 11, 0.1); color: var(--primary); box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+        .status-action-btn.loading { opacity: 0.5; pointer-events: none; }
+        
+        .shadow-premium { box-shadow: 0 10px 30px rgba(245, 158, 11, 0.25); }
+        .search-glow:focus-within { border-color: var(--primary); box-shadow: 0 0 20px rgba(245, 158, 11, 0.1); }
+
+        .empty-state { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 28px; }
+        .icon-circle { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center; }
+        .pb-80 { padding-bottom: 80px; }
+        .h-1 { height: 1px; }
       `}</style>
     </div>
   )

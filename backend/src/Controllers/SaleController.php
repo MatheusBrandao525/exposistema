@@ -54,7 +54,7 @@ class SaleController extends Controller
         $this->db->beginTransaction();
         
         try {
-            $sql = "INSERT INTO sales (event_id, client_id, user_id, negotiated_price, status, payment_method, purchase_date) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO sales (event_id, client_id, user_id, negotiated_price, status, payment_method, observations, purchase_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $data['event_id'] ?? 1,
@@ -63,6 +63,7 @@ class SaleController extends Controller
                 $data['total_price'],
                 'pending',
                 $data['payment_method'] ?? 'pending',
+                $data['observations'] ?? null,
                 date('Y-m-d')
             ]);
             $sale_id = $this->db->lastInsertId();
@@ -101,5 +102,89 @@ class SaleController extends Controller
         } else {
             $this->jsonResponse(['error' => 'Venda não encontrada'], 404);
         }
+    }
+
+    public function mySales(): void
+    {
+        $user = \App\Core\Auth::getUser();
+        if (!$user) {
+            $this->jsonResponse(['error' => 'Não autorizado'], 401);
+            return;
+        }
+
+        $sql = "SELECT 
+                    s.*, 
+                    s.negotiated_price as total_price,
+                    c.name as client_name, 
+                    u.name as seller_name, 
+                    GROUP_CONCAT(asp.name) as item_names
+                FROM sales s
+                JOIN clients c ON s.client_id = c.id
+                JOIN users u ON s.user_id = u.id
+                LEFT JOIN sale_items si ON si.sale_id = s.id
+                LEFT JOIN ad_spaces asp ON si.ad_space_id = asp.id
+                WHERE s.user_id = ?
+                GROUP BY s.id
+                ORDER BY s.created_at DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$user['id']]);
+        $sales = $stmt->fetchAll();
+        
+        $this->jsonResponse($sales);
+    }
+
+    public function updateStatus(int $id): void
+    {
+        $user = \App\Core\Auth::getUser();
+        if (!$user) {
+            $this->jsonResponse(['error' => 'Não autorizado'], 401);
+            return;
+        }
+
+        $data = $this->getPostData();
+        $status = $data['status'] ?? null;
+
+        if (!$status) {
+            $this->jsonResponse(['error' => 'Status não informado'], 400);
+            return;
+        }
+
+        // Verificar se a venda pertence ao vendedor (ou se é admin)
+        $stmt = $this->db->prepare("SELECT user_id FROM sales WHERE id = ?");
+        $stmt->execute([$id]);
+        $sale = $stmt->fetch();
+
+        if (!$sale) {
+            $this->jsonResponse(['error' => 'Venda não encontrada'], 404);
+            return;
+        }
+
+        if ($sale['user_id'] != $user['id']) {
+            $this->jsonResponse(['error' => 'Você não tem permissão para alterar esta venda. Apenas o vendedor proprietário pode fazê-lo.'], 403);
+            return;
+        }
+
+        $allowedStatuses = ['pending', 'paid', 'expired', 'refused', 'cancelled'];
+        // Mapear status do frontend (opcional, se vier em PT-BR)
+        $statusMap = [
+            'pendente' => 'pending',
+            'pago' => 'paid',
+            'expirado' => 'expired',
+            'recusado' => 'refused',
+            'cancelado' => 'cancelled'
+        ];
+        
+        $finalStatus = $statusMap[$status] ?? $status;
+
+        if (!in_array($finalStatus, $allowedStatuses)) {
+            $this->jsonResponse(['error' => 'Status inválido'], 400);
+            return;
+        }
+
+        $stmt = $this->db->prepare("UPDATE sales SET status = ? WHERE id = ?");
+        $stmt->execute([$finalStatus, $id]);
+
+        $this->jsonResponse(['success' => true]);
     }
 }

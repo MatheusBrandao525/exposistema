@@ -1,6 +1,6 @@
 <?php
-error_reporting(0);
-ini_set('display_errors', 0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 require_once __DIR__ . '/src/Core/Env.php';
 require_once __DIR__ . '/src/Core/Config.php';
@@ -66,8 +66,10 @@ $router->add('GET', '/spaces/{id}/booking-details', 'SpaceController@getBookingD
 
 // Protected Routes (Sales)
 $router->add('GET', '/sales', 'SaleController@index', true);
+$router->add('GET', '/sales/me', 'SaleController@mySales', true);
 $router->add('POST', '/sales', 'SaleController@store', true);
 $router->add('GET', '/sales/{id}', 'SaleController@show', true);
+$router->add('PUT', '/sales/{id}/status', 'SaleController@updateStatus', true);
 
 // Users
 $router->add('GET', '/users', 'UserController@index', true);

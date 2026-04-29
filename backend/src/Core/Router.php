@@ -8,7 +8,7 @@ class Router
 {
     private array $routes = [];
 
-    public function add(string $method, string $path, string $handler, bool $protected = false): void
+    public function add(string $method, string $path, string|callable $handler, bool $protected = false): void
     {
         $this->routes[] = [
             'method' => $method,
