@@ -187,6 +187,35 @@ const Sales = () => {
   const totalRevenue = validSales.reduce((acc, s) => acc + parseFloat(s.total_price), 0);
   const averageSale = validSales.length > 0 ? (totalRevenue / validSales.length) : 0;
   const totalVolume = validSales.length;
+
+  // Calculando Porcentagens (Crescimento Mensal real usando apenas vendas válidas)
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  const salesThisMonth = validSales.filter(s => {
+    const d = new Date(s.purchase_date || s.created_at);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+  const salesLastMonth = validSales.filter(s => {
+    const d = new Date(s.purchase_date || s.created_at);
+    return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+  });
+
+  const revThisMonth = salesThisMonth.reduce((acc, s) => acc + parseFloat(s.total_price), 0);
+  const revLastMonth = salesLastMonth.reduce((acc, s) => acc + parseFloat(s.total_price), 0);
+  let revGrowth = revLastMonth > 0 ? ((revThisMonth - revLastMonth) / revLastMonth) * 100 : (revThisMonth > 0 ? 100 : 0);
+  const revTrend = (revGrowth >= 0 ? '+' : '') + revGrowth.toFixed(1) + '%';
+
+  const volGrowth = salesLastMonth.length > 0 ? ((salesThisMonth.length - salesLastMonth.length) / salesLastMonth.length) * 100 : (salesThisMonth.length > 0 ? 100 : 0);
+  const volTrend = (volGrowth >= 0 ? '+' : '') + volGrowth.toFixed(1) + '%';
+
+  const avgThisMonth = salesThisMonth.length > 0 ? revThisMonth / salesThisMonth.length : 0;
+  const avgLastMonth = salesLastMonth.length > 0 ? revLastMonth / salesLastMonth.length : 0;
+  let avgGrowth = avgLastMonth > 0 ? ((avgThisMonth - avgLastMonth) / avgLastMonth) * 100 : (avgThisMonth > 0 ? 100 : 0);
+  const avgTrend = (avgGrowth >= 0 ? '+' : '') + avgGrowth.toFixed(1) + '%';
   const getPaymentIcon = (method) => {
     if (method?.toLowerCase().includes('cartão')) return <CreditCard size={14} />
     if (method?.toLowerCase().includes('pix')) return <ArrowUpRight size={14} />
@@ -221,19 +250,19 @@ const Sales = () => {
           title="Receita Prevista" 
           value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)} 
           icon={<BarChart3 size={24} />} 
-          trend="+12.5%" 
+          trend={revTrend} 
         />
         <StatCard 
           title="Volume de Contratos" 
           value={totalVolume} 
           icon={<Wallet size={24} />} 
-          trend="+8%" 
+          trend={volTrend} 
         />
         <StatCard 
           title="Ticket Médio" 
           value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(averageSale)} 
           icon={<ArrowUpRight size={24} />} 
-          trend="+5.2%" 
+          trend={avgTrend} 
         />
         <StatCard 
           title="Liquidez Real" 
