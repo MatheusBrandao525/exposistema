@@ -20,7 +20,7 @@ const SellerSales = () => {
   const [selectedStatusToUpdate, setSelectedStatusToUpdate] = useState({})
   const [observations, setObservations] = useState('')
   const [showNewClientForm, setShowNewClientForm] = useState(false)
-  const [newClient, setNewClient] = useState({ name: '', email: '', company: '', phone: '' })
+  const [newClient, setNewClient] = useState({ name: '', email: '', company: '', phone: '', is_partner: false })
 
   useEffect(() => {
     fetchList()
@@ -131,7 +131,7 @@ const SellerSales = () => {
         setSelectedClient({ ...newClient, id: data.id })
         setStep(2)
         setShowNewClientForm(false)
-        setNewClient({ name: '', email: '', company: '', phone: '' })
+        setNewClient({ name: '', email: '', company: '', phone: '', is_partner: false })
         setSearchTerm('')
       } else {
         alert('Erro ao criar cliente')
@@ -280,6 +280,20 @@ const SellerSales = () => {
                   <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Email (Opcional)" type="email" value={newClient.email} onChange={e => setNewClient({...newClient, email: e.target.value})} />
                   <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Telefone / WhatsApp (Opcional)" value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} />
                   <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Empresa / CNPJ (Opcional)" value={newClient.company} onChange={e => setNewClient({...newClient, company: e.target.value})} />
+                  
+                  <div className="flex align-center gap-12 mt-8 px-8">
+                    <input 
+                      type="checkbox" 
+                      id="is_partner_mobile"
+                      style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                      checked={newClient.is_partner} 
+                      onChange={e => setNewClient({...newClient, is_partner: e.target.checked})} 
+                    />
+                    <label htmlFor="is_partner_mobile" style={{ cursor: 'pointer', marginBottom: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
+                      Este cliente é um Sócio (20% de desconto)
+                    </label>
+                  </div>
+
                   <button type="submit" className="btn btn-primary w-full py-16 mt-8 font-black uppercase tracking-widest" disabled={loading}>
                     {loading ? 'Salvando...' : 'Cadastrar e Continuar'}
                   </button>
