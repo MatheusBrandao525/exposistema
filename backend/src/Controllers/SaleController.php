@@ -185,6 +185,14 @@ class SaleController extends Controller
         $stmt = $this->db->prepare("UPDATE sales SET status = ? WHERE id = ?");
         $stmt->execute([$finalStatus, $id]);
 
+        $spaceStatus = in_array($finalStatus, ['cancelled', 'refused', 'expired']) ? 'available' : 'sold';
+        
+        $sqlSpace = "UPDATE ad_spaces 
+                     JOIN sale_items ON ad_spaces.id = sale_items.ad_space_id 
+                     SET ad_spaces.status = ? 
+                     WHERE sale_items.sale_id = ?";
+        $this->db->prepare($sqlSpace)->execute([$spaceStatus, $id]);
+
         $this->jsonResponse(['success' => true]);
     }
 }
