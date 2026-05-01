@@ -21,7 +21,7 @@ class ClientController extends Controller
 
     public function store(): void
     {
-        \App\Core\Auth::checkRole(['admin']);
+        \App\Core\Auth::checkRole(['admin', 'seller']);
         $data = $this->getPostData();
         $sql = "INSERT INTO clients (name, phone, company, email, is_partner) VALUES (?, ?, ?, ?, ?)";
         $this->db->prepare($sql)->execute([

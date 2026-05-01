@@ -19,6 +19,8 @@ const SellerSales = () => {
   const [historySearch, setHistorySearch] = useState('')
   const [selectedStatusToUpdate, setSelectedStatusToUpdate] = useState({})
   const [observations, setObservations] = useState('')
+  const [showNewClientForm, setShowNewClientForm] = useState(false)
+  const [newClient, setNewClient] = useState({ name: '', email: '', company: '', phone: '' })
 
   useEffect(() => {
     fetchList()
@@ -116,6 +118,29 @@ const SellerSales = () => {
 
   const handleStatusSelect = (saleId, status) => {
     setSelectedStatusToUpdate({ ...selectedStatusToUpdate, [saleId]: status })
+  }
+
+  const handleCreateClient = async (e) => {
+    e.preventDefault()
+    if (!newClient.name) return alert('O nome é obrigatório')
+    setLoading(true)
+    try {
+      const res = await api.post('/clients', newClient)
+      const data = await res.json()
+      if (data.success) {
+        setSelectedClient({ ...newClient, id: data.id })
+        setStep(2)
+        setShowNewClientForm(false)
+        setNewClient({ name: '', email: '', company: '', phone: '' })
+        setSearchTerm('')
+      } else {
+        alert('Erro ao criar cliente')
+      }
+    } catch (err) {
+      alert('Erro na conexão')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filteredClients = clients
@@ -244,29 +269,63 @@ const SellerSales = () => {
       <div className="content-scroll px-20 py-20">
         {step === 1 && (
           <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="step-container">
-            <div className={`input-group-mobile glass ${searchTerm ? 'focused' : ''}`}>
-              <Search size={20} className="color-muted" />
-              <input 
-                placeholder="Pesquise o cliente por nome..." 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
-              />
-            </div>
-
-            <div className="list-container mt-20">
-              {filteredClients.length > 0 ? filteredClients.map(client => (
-                <div key={client.id} className="glass list-item animate-slideUp" onClick={() => { setSelectedClient(client); setStep(2); setSearchTerm('') }}>
-                  <div className="item-icon"><User size={20} className="color-primary" /></div>
-                  <div className="item-info">
-                    <strong>{client.name}</strong>
-                    <span>{client.company || 'Pessoa Física'}</span>
-                  </div>
-                  <ChevronRight size={20} className="color-muted opacity-50" />
+            {showNewClientForm ? (
+              <div className="new-client-form glass p-20 rounded-20 animate-fade">
+                <div className="flex justify-between align-center mb-20">
+                  <h3 className="text-xl font-black text-white">Novo Cliente</h3>
+                  <button className="btn-text text-sm color-muted" onClick={() => setShowNewClientForm(false)}>Voltar</button>
                 </div>
-              )) : searchTerm.length > 1 && !loading && (
-                <p className="text-center py-40 color-muted italic">Nenhum cliente encontrado.</p>
-              )}
-            </div>
+                <form onSubmit={handleCreateClient} className="flex-column gap-16">
+                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Nome Completo *" value={newClient.name} onChange={e => setNewClient({...newClient, name: e.target.value})} required />
+                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Email (Opcional)" type="email" value={newClient.email} onChange={e => setNewClient({...newClient, email: e.target.value})} />
+                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Telefone / WhatsApp (Opcional)" value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} />
+                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Empresa / CNPJ (Opcional)" value={newClient.company} onChange={e => setNewClient({...newClient, company: e.target.value})} />
+                  <button type="submit" className="btn btn-primary w-full py-16 mt-8 font-black uppercase tracking-widest" disabled={loading}>
+                    {loading ? 'Salvando...' : 'Cadastrar e Continuar'}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <>
+                <div className={`input-group-mobile glass ${searchTerm ? 'focused' : ''}`}>
+                  <Search size={20} className="color-muted" />
+                  <input 
+                    placeholder="Pesquise o cliente por nome..." 
+                    value={searchTerm} 
+                    onChange={(e) => setSearchTerm(e.target.value)} 
+                  />
+                </div>
+
+                <div className="list-container mt-20">
+                  {filteredClients.length > 0 ? filteredClients.map(client => (
+                    <div key={client.id} className="glass list-item animate-slideUp" onClick={() => { setSelectedClient(client); setStep(2); setSearchTerm('') }}>
+                      <div className="item-icon"><User size={20} className="color-primary" /></div>
+                      <div className="item-info">
+                        <strong>{client.name}</strong>
+                        <span>{client.company || 'Pessoa Física'}</span>
+                      </div>
+                      <ChevronRight size={20} className="color-muted opacity-50" />
+                    </div>
+                  )) : searchTerm.length > 1 && !loading ? (
+                    <div className="text-center py-40">
+                      <p className="color-muted italic mb-16">Nenhum cliente encontrado.</p>
+                      <button className="btn btn-primary py-12 px-24 font-bold text-sm" onClick={() => setShowNewClientForm(true)}>
+                         <Plus size={16} className="mr-8 inline" style={{ verticalAlign: 'middle', marginRight: '8px' }}/> 
+                         Cadastrar Cliente
+                      </button>
+                    </div>
+                  ) : null}
+                  
+                  {!searchTerm && !loading && (
+                    <div className="text-center mt-32">
+                      <button className="btn-text color-primary text-sm font-bold" onClick={() => setShowNewClientForm(true)}>
+                        <Plus size={16} style={{ verticalAlign: 'middle', marginRight: '4px' }}/> Cadastrar Novo Cliente
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </motion.div>
         )}
 
