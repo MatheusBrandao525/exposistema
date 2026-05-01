@@ -183,9 +183,10 @@ const Sales = () => {
     return matchSeller && matchCategory && matchSearch
   })
 
-  const totalRevenue = sales.reduce((acc, s) => acc + parseFloat(s.total_price), 0)
-  const averageSale = sales.length > 0 ? (totalRevenue / sales.length) : 0
-
+  const validSales = sales.filter(s => s.status === 'paid' || s.status === 'pending');
+  const totalRevenue = validSales.reduce((acc, s) => acc + parseFloat(s.total_price), 0);
+  const averageSale = validSales.length > 0 ? (totalRevenue / validSales.length) : 0;
+  const totalVolume = validSales.length;
   const getPaymentIcon = (method) => {
     if (method?.toLowerCase().includes('cartão')) return <CreditCard size={14} />
     if (method?.toLowerCase().includes('pix')) return <ArrowUpRight size={14} />
@@ -224,7 +225,7 @@ const Sales = () => {
         />
         <StatCard 
           title="Volume de Contratos" 
-          value={sales.length} 
+          value={totalVolume} 
           icon={<Wallet size={24} />} 
           trend="+8%" 
         />
