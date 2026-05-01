@@ -6,6 +6,14 @@ import api from '../api'
 const Login = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = React.useState(false)
+  const [errorMsg, setErrorMsg] = React.useState('')
+
+  const showError = (msg) => {
+    setErrorMsg(msg)
+    setTimeout(() => {
+      setErrorMsg('')
+    }, 5000)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -17,7 +25,7 @@ const Login = () => {
       const res = await api.post('/login', { email, password })
       const data = await res.json()
       
-      if (data.success) {
+      if (res && res.ok && data.success) {
         localStorage.setItem('user', JSON.stringify(data.user))
         localStorage.setItem('token', data.token)
         if (data.user.role === 'seller') {
@@ -26,10 +34,10 @@ const Login = () => {
           navigate('/')
         }
       } else {
-        alert(data.error || 'Erro no login')
+        showError(data?.error || 'E-mail ou senha incorretos.')
       }
     } catch (err) {
-      alert('Erro ao conectar com o servidor')
+      showError('Erro ao conectar com o servidor. Tente novamente mais tarde.')
     } finally {
       setLoading(false)
     }
@@ -42,6 +50,12 @@ const Login = () => {
           <img src="/logo.png" alt="Expovale 2026" className="login-logo" />
           <p>Autenticação de Acesso</p>
         </div>
+
+        {errorMsg && (
+          <div className="error-toast">
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
@@ -97,6 +111,20 @@ const Login = () => {
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 0.15em;
+        }
+        .error-toast {
+          background-color: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #ef4444;
+          padding: 12px;
+          border-radius: 8px;
+          margin-bottom: 24px;
+          font-size: 14px;
+          animation: fade-in 0.3s ease-in-out;
+        }
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .login-form { display: flex; flex-direction: column; gap: 16px; }
         .input-group {

@@ -16,7 +16,7 @@ const fetchWithAuth = async (endpoint, options = {}) => {
     headers,
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && !endpoint.includes('/login')) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';
