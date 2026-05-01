@@ -20,7 +20,7 @@ class HomeController extends Controller
     {
         $db = Database::getConnection();
         $revenue = $db->query("SELECT SUM(negotiated_price) FROM sales WHERE status = 'paid'")->fetchColumn() ?: 0;
-        $count = $db->query("SELECT COUNT(*) FROM sales")->fetchColumn() ?: 0;
+        $count = $db->query("SELECT COUNT(*) FROM sales WHERE status IN ('paid', 'pending')")->fetchColumn() ?: 0;
         $clients = $db->query("SELECT COUNT(*) FROM clients")->fetchColumn() ?: 0;
         $spaces = $db->query("SELECT COUNT(*) FROM ad_spaces WHERE status = 'available'")->fetchColumn() ?: 0;
         
