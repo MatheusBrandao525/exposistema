@@ -21,6 +21,7 @@ const SellerSales = () => {
   const [observations, setObservations] = useState('')
   const [showNewClientForm, setShowNewClientForm] = useState(false)
   const [newClient, setNewClient] = useState({ name: '', email: '', company: '', phone: '', is_partner: false })
+  const [lastSale, setLastSale] = useState(null)
 
   useEffect(() => {
     fetchList()
@@ -192,10 +193,23 @@ const SellerSales = () => {
       const res = await api.post('/sales', payload)
       const data = await res.json()
       if (data.success) {
+        setLastSale({
+          id: data.id,
+          client_name: selectedClient.name,
+          company: selectedClient.company,
+          email: selectedClient.email,
+          phone: selectedClient.phone,
+          total_price: getTotal(),
+          payment_method: paymentMethod,
+          status: saleStatus,
+          seller_name: user.name || 'Vendedor',
+          items: [...cart]
+        })
         setSuccess(true)
         setCart([])
         setSelectedClient(null)
         setStep(1)
+        setObservations('')
       } else {
         alert('Erro: ' + (data.error || 'Falha ao salvar venda'))
       }
@@ -211,7 +225,146 @@ const SellerSales = () => {
     navigate('/login')
   }
 
-  if (success) {
+  const handlePrintReceipt = (saleData) => {
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    
+    const itemsHtml = saleData.items.map(item => `
+      <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 14px;">
+        <span style="color: #444; font-weight: 500;">Espaço / Categoria: <strong>${item.name}</strong></span>
+        <span style="font-weight: 700; color: #000;">1 UN</span>
+      </div>
+    `).join('');
+
+    const statusLabel = saleData.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE';
+    const statusColor = saleData.status === 'paid' ? '#10b981' : '#f59e0b';
+    const statusBg = saleData.status === 'paid' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)';
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Comprovante de Venda - ${saleData.id}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <style>
+          body { font-family: 'Inter', sans-serif; margin: 0; padding: 40px; color: #1a1a1a; line-height: 1.5; background: #fff; }
+          .container { max-width: 700px; margin: 0 auto; border: 1px solid #eaeaea; padding: 40px; border-radius: 12px; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #000; padding-bottom: 25px; margin-bottom: 30px; }
+          .header h1 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+          .header p { margin: 5px 0 0; font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase; }
+          .id-badge { background: #000; color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 800; }
+          
+          .section-title { font-size: 11px; font-weight: 900; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+          .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px; }
+          .data-item label { display: block; font-size: 10px; font-weight: 800; color: #999; text-transform: uppercase; margin-bottom: 4px; }
+          .data-item span { font-size: 15px; font-weight: 700; display: block; }
+          
+          .items-list { margin-bottom: 40px; }
+          
+          .total-box { background: #f9fafb; padding: 30px; border-radius: 12px; border: 1px solid #efefef; display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+          .total-label { font-size: 14px; font-weight: 800; color: #444; }
+          .total-value { font-size: 32px; font-weight: 900; color: #000; }
+          
+          .status-badge { display: inline-block; padding: 8px 16px; border-radius: 100px; font-size: 12px; font-weight: 900; color: ${statusColor}; background: ${statusBg}; border: 1px solid ${statusColor}33; }
+          
+          .footer { margin-top: 60px; padding-top: 30px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-end; }
+          .vendedor-info h4 { margin: 0; font-size: 13px; font-weight: 800; }
+          .vendedor-info p { margin: 2px 0 0; font-size: 11px; color: #888; }
+          .timestamp { font-size: 10px; color: #bbb; text-align: right; font-weight: 600; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div style="display: flex; align-items: center; gap: 20px;">
+              <div style="width: 50px; height: 50px; background: #000; border-radius: 12px;"></div>
+              <div>
+                <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXPOVALE APRF</h1>
+                <p style="margin: 5px 0 0; font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase;">Comprovante de Operação Financeira</p>
+              </div>
+            </div>
+            <div class="id-badge">Controle #${saleData.id.toString().padStart(4, '0')}</div>
+          </div>
+
+          <div class="section-title">Informações do Contratante</div>
+          <div class="data-grid">
+            <div class="data-item">
+              <label>Cliente</label>
+              <span>${saleData.client_name}</span>
+            </div>
+            <div class="data-item">
+              <label>Tipo de Registro</label>
+              <span>${saleData.company || 'Investidor Individual'}</span>
+            </div>
+            <div class="data-item">
+              <label>Data Transação</label>
+              <span>${new Date().toLocaleDateString('pt-BR')}</span>
+            </div>
+            <div class="data-item">
+              <label>Meio de Pagamento</label>
+              <span>${saleData.payment_method.toUpperCase()}</span>
+            </div>
+          </div>
+
+          <div class="section-title">Detalhamento dos Itens</div>
+          <div class="items-list">
+            ${itemsHtml}
+          </div>
+
+          <div class="total-box">
+            <div>
+              <span class="total-label">VALOR TOTAL DO CONTRATO</span>
+              <div style="margin-top: 8px;">
+                <span class="status-badge">${statusLabel}</span>
+              </div>
+            </div>
+            <span class="total-value">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saleData.total_price)}</span>
+          </div>
+
+          <div class="footer">
+            <div class="vendedor-info">
+              <h4>Responsável: ${saleData.seller_name}</h4>
+              <p>Documento gerado automaticamente pelo sistema de gestão.</p>
+            </div>
+            <div class="timestamp">
+              EMITIDO EM: ${new Date().toLocaleString('pt-BR')}
+            </div>
+          </div>
+        </div>
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 500);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
+  const handleShareWhatsApp = (saleData) => {
+    const text = `*EXPOVALE APRF*
+Confirmação de Reserva e Contrato
+
+*Cliente:* ${saleData.client_name}
+*Pedido:* #${saleData.id.toString().padStart(4, '0')}
+*Itens:*
+${saleData.items.map(item => `- ${item.name}`).join('\n')}
+
+*Total:* ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saleData.total_price)}
+*Status:* ${saleData.status === 'paid' ? 'Liquidado ✅' : 'Pendente ⏳'}
+
+Obrigado por fechar negócio conosco!`;
+
+    const encoded = encodeURIComponent(text);
+    const url = saleData.phone ? `https://wa.me/${saleData.phone.replace(/\D/g, '')}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+    window.open(url, '_blank');
+  };
+
+  if (success && lastSale) {
     return (
       <div style={{ 
         position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
@@ -232,7 +385,17 @@ const SellerSales = () => {
             </div>
             <h2 className="text-3xl font-black mb-16 text-white tracking-tight">Venda Concluída!</h2>
             <p className="color-muted mb-40 text-sm opacity-60 leading-relaxed">O contrato foi gerado e o espaço foi reservado com sucesso no sistema.</p>
-            <button className="btn btn-primary w-full py-20 font-black" onClick={() => window.location.reload()}>FINALIZAR E VOLTAR</button>
+            
+            <div className="flex-column gap-12 mb-32">
+              <button className="btn btn-primary w-full py-16 font-bold flex align-center justify-center gap-8" onClick={() => handlePrintReceipt(lastSale)}>
+                <FileEdit size={18} /> Salvar/Imprimir Recibo PDF
+              </button>
+              <button className="btn w-full py-16 font-bold flex align-center justify-center gap-8" style={{ background: '#25D366', color: '#fff', border: 'none' }} onClick={() => handleShareWhatsApp(lastSale)}>
+                <Phone size={18} /> Enviar Info via WhatsApp
+              </button>
+            </div>
+
+            <button className="btn-text w-full py-20 font-black color-muted" onClick={() => { setSuccess(false); setLastSale(null); window.location.reload(); }}>VOLTAR AO TERMINAL</button>
          </motion.div>
       </div>
     )

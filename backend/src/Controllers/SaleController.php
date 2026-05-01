@@ -84,6 +84,53 @@ class SaleController extends Controller
             $this->db->prepare("INSERT INTO sale_installments (sale_id, installment_number, amount, due_date, status) VALUES (?, 1, ?, ?, ?)")
                  ->execute([$sale_id, $data['total_price'], date('Y-m-d'), $status]);
 
+            // Enviar email automático
+            $client_stmt = $this->db->prepare("SELECT name, email FROM clients WHERE id = ?");
+            $client_stmt->execute([$data['client_id']]);
+            $client = $client_stmt->fetch();
+
+            if ($client && !empty($client['email'])) {
+                $to = $client['email'];
+                $subject = "Confirmação de Contrato - Expovale #" . str_pad($sale_id, 4, '0', STR_PAD_LEFT);
+                
+                $itemsHtml = "";
+                foreach ($data['items'] as $item) {
+                    $itemsHtml .= "<li>" . htmlspecialchars($item['name'] ?? 'Espaço') . "</li>";
+                }
+                
+                $totalFormatted = "R$ " . number_format($data['total_price'], 2, ',', '.');
+                $statusText = $status === 'paid' ? 'Liquidado' : 'Pendente';
+                
+                $message = "
+                <html>
+                <head>
+                  <title>Seu Comprovante</title>
+                </head>
+                <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;'>
+                  <h2 style='color: #000;'>Olá, {$client['name']}!</h2>
+                  <p>Este é um e-mail automático confirmando a sua transação com a Expovale.</p>
+                  <div style='background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin: 20px 0;'>
+                      <p style='margin: 5px 0;'><strong>Pedido:</strong> #" . str_pad($sale_id, 4, '0', STR_PAD_LEFT) . "</p>
+                      <p style='margin: 5px 0;'><strong>Status:</strong> {$statusText}</p>
+                      <p style='margin: 5px 0;'><strong>Total:</strong> {$totalFormatted}</p>
+                  </div>
+                  <h3>Itens Contratados:</h3>
+                  <ul>{$itemsHtml}</ul>
+                  <br>
+                  <p>Agradecemos a parceria!</p>
+                  <p><small>Equipe Expovale</small></p>
+                </body>
+                </html>
+                ";
+
+                $headers = "MIME-Version: 1.0" . "\r\n";
+                $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+                $headers .= "From: contato@expovalesfg.com.br" . "\r\n";
+                $headers .= "Reply-To: contato@expovalesfg.com.br" . "\r\n";
+
+                @mail($to, $subject, $message, $headers);
+            }
+
             $this->jsonResponse(['success' => true, 'id' => $sale_id]);
         } catch (Exception $e) {
             $this->db->rollBack();
