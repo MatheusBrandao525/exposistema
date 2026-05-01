@@ -35,11 +35,23 @@ const AdSpaces = () => {
   const [selectedSpace, setSelectedSpace] = useState(null)
   const [bookingDetails, setBookingDetails] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [types, setTypes] = useState([])
+  const [formData, setFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchSpaces()
+    fetchTypes()
   }, [])
+
+  const fetchTypes = () => {
+    api.get('/types')
+      .then(res => res.json())
+      .then(data => setTypes(data))
+      .catch(err => console.error(err))
+  }
 
   const fetchSpaces = () => {
     setLoading(true)
@@ -75,6 +87,32 @@ const AdSpaces = () => {
     (s.type_name && s.type_name.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
+  const handleAddSpace = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        name: formData.name,
+        ad_space_type_id: formData.ad_space_type_id,
+        base_price: parseFloat(formData.base_price),
+        allows_discount: formData.allows_discount
+      };
+      const res = await api.post('/spaces', payload);
+      const data = await res.json();
+      if (data.success) {
+        setShowAddModal(false);
+        setFormData({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true });
+        fetchSpaces();
+      } else {
+        alert(data.error || 'Erro ao criar espaço');
+      }
+    } catch (err) {
+      alert('Erro ao criar espaço');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="spaces-container-premium">
       <header className="premium-page-header">
@@ -82,7 +120,7 @@ const AdSpaces = () => {
           <h1 className="main-title">Mapa de Inventário</h1>
           <p className="subtitle">Gestão estratégica de espaços publicitários e ativos do evento.</p>
         </div>
-        <button className="btn-add-premium">
+        <button className="btn-add-premium" onClick={() => setShowAddModal(true)}>
            <Plus size={20} />
            <span>Novo Ativo</span>
         </button>
@@ -220,6 +258,87 @@ const AdSpaces = () => {
                   <div className="footer-buttons">
                      <button className="btn-minimal" onClick={() => setShowModal(false)}>Fechar Janela</button>
                   </div>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Adicionar Ativo */}
+      <AnimatePresence>
+        {showAddModal && (
+          <div className="modal-overlay-premium" onClick={() => setShowAddModal(false)}>
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.9, y: 30 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 30 }}
+               className="modal-card-premium glass"
+               style={{ maxWidth: '500px', display: 'flex', flexDirection: 'column' }}
+               onClick={e => e.stopPropagation()}
+            >
+               <div className="modal-header">
+                  <div className="header-text">
+                    <h3>Novo Ativo</h3>
+                    <span className="type-meta">Adicionar espaço ao inventário</span>
+                  </div>
+                  <button className="close-x" onClick={() => setShowAddModal(false)}><X size={20}/></button>
+               </div>
+
+               <div style={{ padding: '32px' }}>
+                  <form onSubmit={handleAddSpace} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                     <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-dim)' }}>Nome do Espaço</label>
+                        <input 
+                           type="text" 
+                           required 
+                           value={formData.name} 
+                           onChange={e => setFormData({...formData, name: e.target.value})} 
+                           style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: '#fff', fontSize: '15px' }} 
+                        />
+                     </div>
+                     <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-dim)' }}>Categoria</label>
+                        <select 
+                           required 
+                           value={formData.ad_space_type_id} 
+                           onChange={e => setFormData({...formData, ad_space_type_id: e.target.value})} 
+                           style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: '#fff', fontSize: '15px', appearance: 'none' }}
+                        >
+                           <option value="" disabled style={{ color: '#000' }}>Selecione uma categoria</option>
+                           {types.map(t => (
+                              <option key={t.id} value={t.id} style={{ color: '#000' }}>{t.name}</option>
+                           ))}
+                        </select>
+                     </div>
+                     <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-dim)' }}>Valor Base (R$)</label>
+                        <input 
+                           type="number" 
+                           step="0.01" 
+                           required 
+                           value={formData.base_price} 
+                           onChange={e => setFormData({...formData, base_price: e.target.value})} 
+                           style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: '#fff', fontSize: '15px' }} 
+                        />
+                     </div>
+                     <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                        <input 
+                           type="checkbox" 
+                           id="allowsDiscount" 
+                           checked={formData.allows_discount} 
+                           onChange={e => setFormData({...formData, allows_discount: e.target.checked})} 
+                           style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+                        />
+                        <label htmlFor="allowsDiscount" style={{ fontSize: '14px', color: '#fff' }}>Permite Desconto para Sócios</label>
+                     </div>
+                     
+                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                        <button type="button" className="btn-minimal" onClick={() => setShowAddModal(false)}>Cancelar</button>
+                        <button type="submit" className="btn-add-premium" disabled={saving}>
+                           {saving ? 'Salvando...' : 'Salvar Ativo'}
+                        </button>
+                     </div>
+                  </form>
                </div>
             </motion.div>
           </div>
