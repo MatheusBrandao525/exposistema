@@ -184,7 +184,11 @@ const Sales = () => {
   })
 
   const validSales = sales.filter(s => s.status === 'paid' || s.status === 'pending');
+  const paidSales = sales.filter(s => s.status === 'paid');
+  
   const totalRevenue = validSales.reduce((acc, s) => acc + parseFloat(s.total_price), 0);
+  const totalPaidRevenue = paidSales.reduce((acc, s) => acc + parseFloat(s.total_price), 0);
+  
   const averageSale = validSales.length > 0 ? (totalRevenue / validSales.length) : 0;
   const totalVolume = validSales.length;
 
@@ -216,6 +220,7 @@ const Sales = () => {
   const avgLastMonth = salesLastMonth.length > 0 ? revLastMonth / salesLastMonth.length : 0;
   let avgGrowth = avgLastMonth > 0 ? ((avgThisMonth - avgLastMonth) / avgLastMonth) * 100 : (avgThisMonth > 0 ? 100 : 0);
   const avgTrend = (avgGrowth >= 0 ? '+' : '') + avgGrowth.toFixed(1) + '%';
+
   const getPaymentIcon = (method) => {
     if (method?.toLowerCase().includes('cartão')) return <CreditCard size={14} />
     if (method?.toLowerCase().includes('pix')) return <ArrowUpRight size={14} />
@@ -266,9 +271,9 @@ const Sales = () => {
         />
         <StatCard 
           title="Liquidez Real" 
-          value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue * 0.7)} 
+          value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPaidRevenue)} 
           icon={<Users size={24} />} 
-          trend="Equilibrado" 
+          trend="Total Recebido" 
         />
       </div>
 

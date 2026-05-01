@@ -168,6 +168,7 @@ const SellerSales = () => {
   const getTotal = () => cart.reduce((acc, item) => acc + (getItemPrice(item) * item.quantity), 0)
 
   const [paymentMethod, setPaymentMethod] = useState('pix')
+  const [saleStatus, setSaleStatus] = useState('pending')
 
   const handleFinish = async () => {
     if (!selectedClient || cart.length === 0) return
@@ -182,6 +183,7 @@ const SellerSales = () => {
       event_id: 1, // Default event
       total_price: getTotal(),
       payment_method: paymentMethod,
+      status: saleStatus,
       observations: observations,
       items: cart.map(item => ({ id: item.id, price: getItemPrice(item), quantity: item.quantity }))
     }
@@ -463,6 +465,22 @@ const SellerSales = () => {
                         <div className={`pay-option ${paymentMethod === 'misto' ? 'active' : ''}`} onClick={() => setPaymentMethod('misto')}>
                            <Layers size={24} />
                            <span>2 FORMAS</span>
+                        </div>
+                     </div>
+
+                     <div className="observation-box mt-20">
+                        <span className="text-xs uppercase font-black color-muted mb-8 block tracking-widest text-center">Status do Pagamento</span>
+                        <div className="flex gap-16 justify-center">
+                           <button 
+                             className={`btn ${saleStatus === 'pending' ? 'btn-primary' : 'btn-ghost glass'}`} 
+                             onClick={() => setSaleStatus('pending')}
+                             style={{ flex: 1, padding: '12px' }}
+                           >Pendente</button>
+                           <button 
+                             className={`btn ${saleStatus === 'paid' ? 'btn-primary' : 'btn-ghost glass'}`} 
+                             onClick={() => setSaleStatus('paid')}
+                             style={{ flex: 1, padding: '12px' }}
+                           >Já Liquidado (Pago)</button>
                         </div>
                      </div>
 

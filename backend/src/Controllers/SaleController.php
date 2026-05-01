@@ -54,6 +54,8 @@ class SaleController extends Controller
         $this->db->beginTransaction();
         
         try {
+            $status = in_array($data['status'] ?? '', ['paid', 'pending']) ? $data['status'] : 'pending';
+            
             $sql = "INSERT INTO sales (event_id, client_id, user_id, negotiated_price, status, payment_method, observations, purchase_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
@@ -61,8 +63,8 @@ class SaleController extends Controller
                 $data['client_id'],
                 $data['user_id'] ?? 1,
                 $data['total_price'],
-                'pending',
-                $data['payment_method'] ?? 'pending',
+                $status,
+                $data['payment_method'] ?? 'pix',
                 $data['observations'] ?? null,
                 date('Y-m-d')
             ]);
@@ -80,7 +82,7 @@ class SaleController extends Controller
 
             // Gerar parcela automática para a venda
             $this->db->prepare("INSERT INTO sale_installments (sale_id, installment_number, amount, due_date, status) VALUES (?, 1, ?, ?, ?)")
-                 ->execute([$sale_id, $data['total_price'], date('Y-m-d'), 'pending']);
+                 ->execute([$sale_id, $data['total_price'], date('Y-m-d'), $status]);
 
             $this->jsonResponse(['success' => true, 'id' => $sale_id]);
         } catch (Exception $e) {
