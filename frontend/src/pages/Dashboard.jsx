@@ -52,8 +52,10 @@ const Dashboard = () => {
         const statsData = await statsRes.json()
         const salesData = await salesRes.json()
         
+        const validSalesData = salesData.filter(s => s.status === 'paid' || s.status === 'pending')
+        
         setStats(statsData)
-        setRecentSales(salesData.slice(0, 5)) // Pegar as 5 últimas
+        setRecentSales(validSalesData.slice(0, 5)) // Pegar as 5 últimas válidas
       } catch (error) {
         console.error("Erro ao buscar dados do dashboard:", error)
       } finally {
