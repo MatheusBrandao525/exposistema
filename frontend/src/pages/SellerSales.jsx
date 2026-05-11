@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet, LogOut, History, Clock, AlertCircle, FileEdit, Repeat, Layers } from 'lucide-react'
+import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet, LogOut, History, Clock, AlertCircle, FileEdit, Repeat, Layers, Phone } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
