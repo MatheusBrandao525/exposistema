@@ -390,16 +390,16 @@ Obrigado por fechar negócio conosco!`;
             <h2 className="text-3xl font-black mb-16 text-white tracking-tight">Venda Concluída!</h2>
             <p className="color-muted mb-40 text-sm opacity-60 leading-relaxed">O contrato foi gerado e o espaço foi reservado com sucesso no sistema.</p>
             
-            <div className="flex-column gap-12 mb-32">
-              <button className="btn btn-primary w-full py-16 font-bold flex align-center justify-center gap-8" onClick={() => handlePrintReceipt(lastSale)}>
-                <FileEdit size={18} /> Salvar/Imprimir Recibo PDF
+            <div className="flex-column gap-20 mb-40">
+              <button className="btn btn-primary w-full py-20 font-bold flex align-center justify-center gap-12 shadow-premium" onClick={() => handlePrintReceipt(lastSale)}>
+                <FileEdit size={20} /> Salvar/Imprimir Recibo PDF
               </button>
-              <button className="btn w-full py-16 font-bold flex align-center justify-center gap-8" style={{ background: '#25D366', color: '#fff', border: 'none' }} onClick={() => handleShareWhatsApp(lastSale)}>
-                <MessageCircle size={18} /> Enviar Info via WhatsApp
+              <button className="btn w-full py-20 font-bold flex align-center justify-center gap-12 shadow-premium" style={{ background: '#25D366', color: '#fff', border: 'none' }} onClick={() => handleShareWhatsApp(lastSale)}>
+                <MessageCircle size={20} /> Enviar Info via WhatsApp
               </button>
             </div>
 
-            <button className="btn-text w-full py-20 font-black color-muted" onClick={() => { setSuccess(false); setLastSale(null); window.location.reload(); }}>VOLTAR AO TERMINAL</button>
+            <button className="btn btn-ghost w-full py-16 font-black color-muted uppercase tracking-widest text-xs" style={{ border: '1px solid rgba(255,255,255,0.05)' }} onClick={() => { setSuccess(false); setLastSale(null); window.location.reload(); }}>VOLTAR AO TERMINAL</button>
          </motion.div>
       </div>
     )
@@ -503,9 +503,9 @@ Obrigado por fechar negócio conosco!`;
                   ) : null}
                   
                   {!searchTerm && !loading && (
-                    <div className="text-center mt-32">
-                      <button className="btn-text color-primary text-sm font-bold" onClick={() => setShowNewClientForm(true)}>
-                        <Plus size={16} style={{ verticalAlign: 'middle', marginRight: '4px' }}/> Cadastrar Novo Cliente
+                    <div className="text-center mt-40">
+                      <button className="btn btn-ghost glass py-16 px-32 rounded-100 font-bold text-sm color-primary flex align-center gap-8 mx-auto" onClick={() => setShowNewClientForm(true)}>
+                        <Plus size={18} /> Cadastrar Novo Cliente
                       </button>
                     </div>
                   )}
@@ -745,12 +745,12 @@ Obrigado por fechar negócio conosco!`;
                        <strong className="text-2xl color-primary font-black">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.total_price)}</strong>
                     </div>
 
-                    <div className="receipt-actions-history mt-20 flex gap-12">
-                       <button className="btn-ghost glass flex-1 py-12 px-8 rounded-12 text-xs font-bold flex align-center justify-center gap-6" onClick={() => handlePrintReceipt(sale)}>
-                          <FileEdit size={14} /> Recibo
+                    <div className="receipt-actions-history mt-24 flex gap-12">
+                       <button className="btn btn-ghost glass flex-1 py-14 rounded-16 text-xs font-black flex align-center justify-center gap-8 border-gold-subtle" onClick={() => handlePrintReceipt(sale)}>
+                          <FileEdit size={14} className="color-primary" /> RECIBO
                        </button>
-                       <button className="btn-ghost glass flex-1 py-12 px-8 rounded-12 text-xs font-bold flex align-center justify-center gap-6" style={{ color: '#25D366' }} onClick={() => handleShareWhatsApp(sale)}>
-                          <MessageCircle size={14} /> WhatsApp
+                       <button className="btn btn-ghost glass flex-1 py-14 rounded-16 text-xs font-black flex align-center justify-center gap-8" style={{ color: '#25D366', borderColor: 'rgba(37, 211, 102, 0.2)' }} onClick={() => handleShareWhatsApp(sale)}>
+                          <MessageCircle size={14} /> WHATSAPP
                        </button>
                     </div>
 
