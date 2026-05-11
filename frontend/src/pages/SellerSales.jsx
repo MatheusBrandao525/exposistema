@@ -228,7 +228,9 @@ const SellerSales = () => {
   const handlePrintReceipt = (saleData) => {
     const printWindow = window.open('', '_blank', 'width=800,height=900');
     
-    const itemsHtml = saleData.items.map(item => `
+    const items = saleData.items || (saleData.item_names ? saleData.item_names.split(',').map(name => ({ name: name.trim() })) : [{ name: 'Espaço / Serviço' }]);
+    
+    const itemsHtml = items.map(item => `
       <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 14px;">
         <span style="color: #444; font-weight: 500;">Espaço / Categoria: <strong>${item.name}</strong></span>
         <span style="font-weight: 700; color: #000;">1 UN</span>
@@ -346,13 +348,15 @@ const SellerSales = () => {
   };
 
   const handleShareWhatsApp = (saleData) => {
+    const items = saleData.items || (saleData.item_names ? saleData.item_names.split(',').map(name => ({ name: name.trim() })) : [{ name: 'Espaço / Serviço' }]);
+    
     const text = `*EXPOVALE APRF*
 Confirmação de Reserva e Contrato
 
 *Cliente:* ${saleData.client_name}
 *Pedido:* #${saleData.id.toString().padStart(4, '0')}
 *Itens:*
-${saleData.items.map(item => `- ${item.name}`).join('\n')}
+${items.map(item => `- ${item.name}`).join('\n')}
 
 *Total:* ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saleData.total_price)}
 *Status:* ${saleData.status === 'paid' ? 'Liquidado ✅' : 'Pendente ⏳'}
@@ -417,6 +421,9 @@ Obrigado por fechar negócio conosco!`;
             <button onClick={handleLogout} className="logout-btn-premium">
                <LogOut size={16} />
             </button>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', marginTop: '8px' }}>
+            <img src="/logo.png" style={{ height: '42px', width: 'auto', objectFit: 'contain' }} alt="Logo" />
           </div>
           <h1 className="terminal-title">Terminal de Vendas</h1>
         </div>
@@ -738,6 +745,15 @@ Obrigado por fechar negócio conosco!`;
                        <strong className="text-2xl color-primary font-black">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.total_price)}</strong>
                     </div>
 
+                    <div className="receipt-actions-history mt-20 flex gap-12">
+                       <button className="btn-ghost glass flex-1 py-12 px-8 rounded-12 text-xs font-bold flex align-center justify-center gap-6" onClick={() => handlePrintReceipt(sale)}>
+                          <FileEdit size={14} /> Recibo
+                       </button>
+                       <button className="btn-ghost glass flex-1 py-12 px-8 rounded-12 text-xs font-bold flex align-center justify-center gap-6" style={{ color: '#25D366' }} onClick={() => handleShareWhatsApp(sale)}>
+                          <MessageCircle size={14} /> WhatsApp
+                       </button>
+                    </div>
+
                     <div className="status-control-section mt-24">
                        <div className="flex align-center gap-8 mb-16">
                           <div className="h-1 flex-1 bg-white-alpha-5 rounded-full"></div>
@@ -794,7 +810,7 @@ Obrigado por fechar negócio conosco!`;
 
       {/* Floating Cart Button & Checkout Bar */}
       <AnimatePresence>
-        {cart.length > 0 && (
+        {cart.length > 0 && step !== 1 && step !== 4 && (
           <motion.div 
             initial={{ y: 100 }} 
             animate={{ y: 0 }} 
