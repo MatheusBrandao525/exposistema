@@ -104,9 +104,9 @@ const Sales = () => {
       </head>
       <body>
         <div class="container">
-          <div className="header">
+          <div class="header">
             <div style="display: flex; align-items: center; gap: 20px;">
-              <img src="/logo.png" style="height: 80px; width: auto;" />
+              <img src="${window.location.origin}/logo.png" style="height: 80px; width: auto;" />
               <div>
                 <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXPOVALE APRF</h1>
                 <p style="margin: 5px 0 0; font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase;">Comprovante de Operação Financeira</p>

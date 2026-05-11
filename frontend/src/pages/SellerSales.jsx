@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet, LogOut, History, Clock, AlertCircle, FileEdit, Repeat, Layers, Phone } from 'lucide-react'
+import { Search, User, Package, Plus, Trash2, CheckCircle2, ShoppingCart, ChevronRight, X, ArrowUpRight, CreditCard, Wallet, LogOut, History, Clock, AlertCircle, FileEdit, Repeat, Layers, MessageCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
@@ -276,7 +276,7 @@ const SellerSales = () => {
         <div class="container">
           <div class="header">
             <div style="display: flex; align-items: center; gap: 20px;">
-              <div style="width: 50px; height: 50px; background: #000; border-radius: 12px;"></div>
+              <img src="${window.location.origin}/logo.png" style="width: 60px; height: 60px; object-fit: contain; border-radius: 8px;" alt="Logo" />
               <div>
                 <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXPOVALE APRF</h1>
                 <p style="margin: 5px 0 0; font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase;">Comprovante de Operação Financeira</p>
@@ -391,7 +391,7 @@ Obrigado por fechar negócio conosco!`;
                 <FileEdit size={18} /> Salvar/Imprimir Recibo PDF
               </button>
               <button className="btn w-full py-16 font-bold flex align-center justify-center gap-8" style={{ background: '#25D366', color: '#fff', border: 'none' }} onClick={() => handleShareWhatsApp(lastSale)}>
-                <Phone size={18} /> Enviar Info via WhatsApp
+                <MessageCircle size={18} /> Enviar Info via WhatsApp
               </button>
             </div>
 
