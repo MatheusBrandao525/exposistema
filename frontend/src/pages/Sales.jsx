@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Search, Filter, BarChart3, Users, Tags, ArrowUpRight, Download, Calendar, Wallet, CreditCard, Banknote, Printer, FileText, X, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../api'
+import * as XLSX from 'xlsx'
 
 const StatCard = ({ title, value, icon, trend, isHighlight }) => (
   <div className={`premium-card stat-card ${isHighlight ? 'highlighted' : ''} animate-fade`}>
@@ -30,6 +31,7 @@ const Sales = () => {
   const [filters, setFilters] = useState({ seller: 'all', category: 'all', search: '' })
   const [selectedSale, setSelectedSale] = useState(null)
   const [showDetail, setShowDetail] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
     fetchInitialData()
@@ -47,6 +49,79 @@ const Sales = () => {
       setTypes(typesRes)
     } catch (err) {
       console.error("Erro ao carregar dados financeiros", err)
+    }
+  }
+
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+    try {
+      // 1. Buscar parcelas para o relatório completo
+      const instRes = await api.get('/financial')
+      const installments = await instRes.json()
+
+      // 2. Preparar os dados das vendas (Consolidado)
+      const formattedSalesData = sales.map(sale => ({
+        'ID Venda': sale.id,
+        'Data': new Date(sale.purchase_date || sale.created_at).toLocaleDateString('pt-BR'),
+        'Cliente': sale.client_name,
+        'Vendedor': sale.seller_name,
+        'Itens': sale.item_types.join(', '),
+        'Valor Total (R$)': parseFloat(sale.total_price),
+        'Método Pagto': sale.payment_method || 'PIX',
+        'Status': sale.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE'
+      }))
+
+      // 3. Preparar os dados das parcelas
+      const worksheetData = installments.map(inst => ({
+        'ID Parcela': inst.id,
+        'ID Venda': inst.sale_id,
+        'Cliente': inst.client_name,
+        'Empresa': inst.client_company || 'Pessoa Física',
+        'Nº Parcela': inst.installment_number,
+        'Vencimento': new Date(inst.due_date).toLocaleDateString('pt-BR'),
+        'Valor (R$)': parseFloat(inst.amount),
+        'Status': inst.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE',
+        'Data de Pagamento': inst.paid_at ? new Date(inst.paid_at).toLocaleDateString('pt-BR') : '-'
+      }))
+
+      // 4. Adicionar uma folha de resumo
+      const summaryData = [
+        { 'Métrica': 'Receita Bruta Total', 'Valor': sales.reduce((acc, s) => acc + parseFloat(s.total_price), 0) },
+        { 'Métrica': 'Volume de Vendas', 'Valor': sales.length },
+        { 'Métrica': 'Ticket Médio', 'Valor': sales.length > 0 ? (sales.reduce((acc, s) => acc + parseFloat(s.total_price), 0) / sales.length) : 0 },
+        { 'Métrica': 'Total Recebido (Líquido)', 'Valor': installments.filter(i => i.status === 'paid').reduce((acc, i) => acc + parseFloat(i.amount), 0) },
+        { 'Métrica': 'Total a Receber (Pendente)', 'Valor': installments.filter(i => i.status === 'pending').reduce((acc, i) => acc + parseFloat(i.amount), 0) }
+      ]
+
+      // 5. Criar Workbook e Worksheets
+      const wb = XLSX.utils.book_new()
+      
+      const wsSummary = XLSX.utils.json_to_sheet(summaryData)
+      const wsSales = XLSX.utils.json_to_sheet(formattedSalesData)
+      const wsInstallments = XLSX.utils.json_to_sheet(worksheetData)
+
+      // 6. Configurar larguras de colunas
+      wsSales['!cols'] = [
+        { wch: 10 }, { wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+      ]
+      wsInstallments['!cols'] = [
+        { wch: 10 }, { wch: 10 }, { wch: 35 }, { wch: 30 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
+      ]
+      wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }]
+
+      // 7. Adicionar ao Workbook
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo Executivo")
+      XLSX.utils.book_append_sheet(wb, wsSales, "Vendas Consolidadas")
+      XLSX.utils.book_append_sheet(wb, wsInstallments, "Detalhamento de Parcelas")
+
+      // 8. Gerar arquivo
+      const fileName = `Balanço_Vendas_Completo_${new Date().toISOString().split('T')[0]}.xlsx`
+      XLSX.writeFile(wb, fileName)
+    } catch (error) {
+      console.error("Erro ao exportar Excel:", error)
+      alert("Erro ao gerar relatório Excel.")
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -241,9 +316,13 @@ const Sales = () => {
             <Calendar size={18} />
             <span>Mensal</span>
           </button>
-          <button className="premium-btn btn-gold" onClick={() => sales.length > 0 && handlePrintReceipt(sales[0])}>
-            <Download size={18} />
-            <span>Exportar Balanço</span>
+          <button 
+            className="premium-btn btn-gold" 
+            onClick={handleExportExcel}
+            disabled={isExporting || sales.length === 0}
+          >
+            {isExporting ? <Clock className="animate-spin" size={18} /> : <Download size={18} />}
+            <span>{isExporting ? 'Exportando...' : 'Exportar Balanço'}</span>
           </button>
         </div>
       </header>

@@ -11,6 +11,7 @@ import {
   Clock
 } from 'lucide-react'
 import api from '../api'
+import * as XLSX from 'xlsx'
 
 const FinancialStat = ({ title, value, icon, subtitle, colorClass }) => (
   <div className="glass stat-card-financial animate-fade">
@@ -57,6 +58,7 @@ const Financial = () => {
     total_overdue: 0
   })
   const [loading, setLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
@@ -77,6 +79,79 @@ const Financial = () => {
       console.error("Erro ao carregar dados financeiros:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+    try {
+      // 0. Buscar todas as vendas para um relatório mais completo
+      const salesRes = await api.get('/sales')
+      const salesData = await salesRes.json()
+
+      // 1. Preparar os dados das parcelas
+      const worksheetData = installments.map(inst => ({
+        'ID Parcela': inst.id,
+        'ID Venda': inst.sale_id,
+        'Cliente': inst.client_name,
+        'Empresa': inst.client_company || 'Pessoa Física',
+        'Nº Parcela': inst.installment_number,
+        'Vencimento': new Date(inst.due_date).toLocaleDateString('pt-BR'),
+        'Valor (R$)': parseFloat(inst.amount),
+        'Status': inst.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE',
+        'Data de Pagamento': inst.paid_at ? new Date(inst.paid_at).toLocaleDateString('pt-BR') : '-'
+      }))
+
+      // 2. Preparar os dados das vendas (Consolidado)
+      const formattedSalesData = salesData.map(sale => ({
+        'ID Venda': sale.id,
+        'Data': new Date(sale.purchase_date || sale.created_at).toLocaleDateString('pt-BR'),
+        'Cliente': sale.client_name,
+        'Vendedor': sale.seller_name,
+        'Itens': sale.item_types.join(', '),
+        'Valor Total (R$)': parseFloat(sale.total_price),
+        'Método Pagto': sale.payment_method || 'PIX',
+        'Status': sale.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE'
+      }))
+
+      // 3. Adicionar uma folha de resumo
+      const summaryData = [
+        { 'Métrica': 'Total Recebido (Líquido)', 'Valor': parseFloat(stats.total_paid) },
+        { 'Métrica': 'Total a Receber (Pendente)', 'Valor': parseFloat(stats.total_pending) },
+        { 'Métrica': 'Total em Atraso', 'Valor': parseFloat(stats.total_overdue) },
+        { 'Métrica': 'Receita Bruta Total', 'Valor': salesData.reduce((acc, s) => acc + parseFloat(s.total_price), 0) },
+        { 'Métrica': 'Volume de Vendas', 'Valor': salesData.length }
+      ]
+
+      // 4. Criar Workbook e Worksheets
+      const wb = XLSX.utils.book_new()
+      
+      const wsSummary = XLSX.utils.json_to_sheet(summaryData)
+      const wsInstallments = XLSX.utils.json_to_sheet(worksheetData)
+      const wsSales = XLSX.utils.json_to_sheet(formattedSalesData)
+
+      // 5. Configurar larguras de colunas
+      wsInstallments['!cols'] = [
+        { wch: 10 }, { wch: 10 }, { wch: 35 }, { wch: 30 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
+      ]
+      wsSales['!cols'] = [
+        { wch: 10 }, { wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+      ]
+      wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }]
+
+      // 6. Adicionar ao Workbook
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo Executivo")
+      XLSX.utils.book_append_sheet(wb, wsSales, "Vendas Consolidadas")
+      XLSX.utils.book_append_sheet(wb, wsInstallments, "Detalhamento de Parcelas")
+
+      // 7. Gerar arquivo
+      const fileName = `Relatorio_Financeiro_Completo_${new Date().toISOString().split('T')[0]}.xlsx`
+      XLSX.writeFile(wb, fileName)
+    } catch (error) {
+      console.error("Erro ao exportar Excel:", error)
+      alert("Erro ao gerar relatório Excel. Verifique o console para mais detalhes.")
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -107,8 +182,16 @@ const Financial = () => {
             <p>Controle de fluxo de caixa, recebimentos e parcelas em aberto.</p>
           </div>
           <div className="header-actions">
-            <button className="btn btn-secondary flex align-center gap-8">
-              <TrendingUp size={18} /> Relatório Completo
+            <button 
+              onClick={handleExportExcel}
+              disabled={isExporting || installments.length === 0}
+              className="btn btn-secondary flex align-center gap-8"
+            >
+              {isExporting ? (
+                <>Processando...</>
+              ) : (
+                <><TrendingUp size={18} /> Exportar Excel (Completo)</>
+              )}
             </button>
           </div>
         </div>
