@@ -15,7 +15,14 @@ class SpaceController extends Controller
 
     public function index(): void
     {
-        $stmt = $this->db->query("SELECT s.*, t.name as type_name FROM ad_spaces s LEFT JOIN ad_space_types t ON s.ad_space_type_id = t.id");
+        $sql = "SELECT s.*, t.name as type_name FROM ad_spaces s LEFT JOIN ad_space_types t ON s.ad_space_type_id = t.id";
+        
+        // Se não for admin, filtrar apenas disponíveis para o terminal de vendas
+        if (!\App\Core\Auth::isAdmin()) {
+            $sql .= " WHERE s.status = 'available'";
+        }
+        
+        $stmt = $this->db->query($sql);
         $this->jsonResponse($stmt->fetchAll());
     }
 

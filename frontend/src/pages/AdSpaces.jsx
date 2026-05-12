@@ -9,7 +9,7 @@ const AdSpaceCard = ({ space, onDetails }) => (
       <div className="card-overlay"></div>
       <div className="card-initial">{space.name[0]}</div>
       <span className={`status-badge-modern ${space.status}`}>
-        {space.status === 'available' ? 'Disponível' : space.status === 'reserved' ? 'Reservado' : 'Vendido'}
+        {space.status === 'available' ? 'Disponível' : 'Indisponível'}
       </span>
     </div>
     <div className="card-body">
@@ -196,7 +196,7 @@ const AdSpaces = () => {
                         <div className="info-entry">
                            <label>Status Atual</label>
                            <span className={`status-pill ${selectedSpace.status}`}>
-                              {selectedSpace.status === 'available' ? 'Disponível para Venda' : 'Indisponível (Reservado)'}
+                              {selectedSpace.status === 'available' ? 'Disponível para Venda' : 'Indisponível'}
                            </span>
                         </div>
                      </div>
