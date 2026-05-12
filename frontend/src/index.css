@@ -165,8 +165,42 @@ select {
 
 .text-xs { font-size: 12px; }
 .text-sm { font-size: 14px; }
+.text-lg { font-size: 18px; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
 .font-bold { font-weight: 700; }
 .color-primary { color: var(--primary); }
 .color-muted { color: var(--text-muted); }
 .color-success { color: var(--success); }
 .color-error { color: var(--error); }
+.color-emerald { color: #10b981; }
+
+/* Utility Classes */
+.flex { display: flex; }
+.flex-column { display: flex; flex-direction: column; }
+.flex-1 { flex: 1; }
+.flex-wrap { flex-wrap: wrap; }
+.align-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-8 { gap: 8px; }
+.gap-16 { gap: 16px; }
+.gap-24 { gap: 24px; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-32 { margin-bottom: 32px; }
+.mb-40 { margin-bottom: 40px; }
+.mb-60 { margin-bottom: 60px; }
+.p-24 { padding: 24px; }
+.p-60 { padding: 60px; }
+.px-24 { padding-left: 24px; padding-right: 24px; }
+.py-16 { padding-top: 16px; padding-bottom: 16px; }
+.py-80 { padding-top: 80px; padding-bottom: 80px; }
+.px-32 { padding-left: 32px; padding-right: 32px; }
+.overflow-hidden { overflow: hidden; }
+.cursor-pointer { cursor: pointer; }
+.bg-transparent { background: transparent; }
+.border-none { border: none; }
+.outline-none { outline: none; }

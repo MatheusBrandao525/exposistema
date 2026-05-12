@@ -120,7 +120,7 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {recentSales.map((sale) => (
+              {(recentSales || []).map((sale) => (
                 <tr key={sale.id}>
                   <td>{sale.client_name}</td>
                   <td>

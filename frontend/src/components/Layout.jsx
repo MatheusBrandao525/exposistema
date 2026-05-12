@@ -101,13 +101,13 @@ export const Layout = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 40px;
+          margin-bottom: 24px;
           padding: 10px;
         }
-
+        
         .main-logo {
           width: 100%;
-          max-width: 200px;
+          max-width: 160px;
           height: auto;
           filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.1));
         }

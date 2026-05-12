@@ -163,18 +163,23 @@ const Sales = () => {
         <style>{`
           .success-screen {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle at 50% 0%, #0c0e14 0%, #06070a 100%);
-            z-index: 2000;
-            display: flex;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.95);
+            backdrop-filter: blur(12px);
+            z-index: 9999;
+            display: flex !important;
             align-items: center;
             justify-content: center;
+            padding: 20px;
           }
           .success-card {
-            max-width: 600px;
+            max-width: 540px;
+            width: 100%;
             border-radius: 32px;
             border: 1px solid rgba(251, 191, 36, 0.2);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+            background: #0f172a;
+            padding: 60px 40px;
             position: relative;
             z-index: 1;
           }
@@ -714,7 +719,7 @@ const Sales = () => {
 
         .premium-grid-stats {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
           gap: 20px;
         }
         .premium-card {

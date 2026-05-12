@@ -209,31 +209,40 @@ const Financial = () => {
         </div>
 
         <style>{`
-          .success-screen {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--bg-main);
-            z-index: 2000;
-          }
-          .success-card {
-            max-width: 600px;
-            border-radius: 32px;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
-          }
-          .success-icon-wrapper {
-            background: rgba(16, 185, 129, 0.1);
-            width: 140px;
-            height: 140px;
-            border-radius: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-          }
-          .text-lg { font-size: 18px; }
-        `}</style>
+        .success-screen {
+          position: fixed;
+          inset: 0;
+          background: rgba(2, 6, 23, 0.95);
+          backdrop-filter: blur(12px);
+          z-index: 9999;
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+        .success-card {
+          max-width: 540px;
+          width: 100%;
+          border-radius: 32px;
+          border: 1px solid rgba(251, 191, 36, 0.2);
+          box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+          background: #0f172a;
+          padding: 60px 40px;
+          position: relative;
+        }
+        .success-icon-wrapper {
+          background: rgba(16, 185, 129, 0.1);
+          width: 120px;
+          height: 120px;
+          border-radius: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto;
+          border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .text-lg { font-size: 18px; }
+      `}</style>
       </div>
     )
   }
@@ -262,7 +271,7 @@ const Financial = () => {
         </div>
       </header>
 
-      <section className="stats-row flex gap-24 mb-40 wrap">
+      <section className="grid-auto mb-40">
         <FinancialStat 
           title="Total Recebido" 
           value={formatCurrency(stats.total_paid)} 
