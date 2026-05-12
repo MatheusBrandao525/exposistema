@@ -57,7 +57,7 @@ const App = () => {
           }>
             <Route index element={<Dashboard />} />
             <Route path="sales" element={<Sales />} />
-            <Route path="financial" element={<Navigate to="/sales" />} />
+            <Route path="financial" element={<Financial />} />
 
             {/* Admin Only Routes */}
             <Route path="spaces" element={

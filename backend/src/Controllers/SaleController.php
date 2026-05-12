@@ -19,6 +19,7 @@ class SaleController extends Controller
         $sql = "SELECT 
                     s.*, 
                     s.negotiated_price as total_price,
+                    SUM(asp.base_price) as original_price,
                     c.name as client_name, 
                     u.name as seller_name, 
                     u.seller_function as seller_function,

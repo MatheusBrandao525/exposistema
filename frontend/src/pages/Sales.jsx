@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Filter, BarChart3, Users, Tags, ArrowUpRight, Download, Calendar, Wallet, CreditCard, Banknote, Printer, FileText, X, ChevronRight } from 'lucide-react'
+import { Search, Filter, BarChart3, Users, Tags, ArrowUpRight, Download, Calendar, Wallet, CreditCard, Banknote, Printer, FileText, X, ChevronRight, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../api'
 import * as XLSX from 'xlsx'
@@ -32,6 +32,7 @@ const Sales = () => {
   const [selectedSale, setSelectedSale] = useState(null)
   const [showDetail, setShowDetail] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [exportSuccess, setExportSuccess] = useState(false)
 
   useEffect(() => {
     fetchInitialData()
@@ -60,16 +61,26 @@ const Sales = () => {
       const installments = await instRes.json()
 
       // 2. Preparar os dados das vendas (Consolidado)
-      const formattedSalesData = sales.map(sale => ({
-        'ID Venda': sale.id,
-        'Data': new Date(sale.purchase_date || sale.created_at).toLocaleDateString('pt-BR'),
-        'Cliente': sale.client_name,
-        'Vendedor': sale.seller_name,
-        'Itens': sale.item_types.join(', '),
-        'Valor Total (R$)': parseFloat(sale.total_price),
-        'Método Pagto': sale.payment_method || 'PIX',
-        'Status': sale.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE'
-      }))
+      const formattedSalesData = sales.map(sale => {
+        const originalPrice = parseFloat(sale.original_price) || parseFloat(sale.total_price);
+        const negotiatedPrice = parseFloat(sale.total_price);
+        const discountValue = originalPrice - negotiatedPrice;
+        const discountPercentage = originalPrice > 0 ? (discountValue / originalPrice) * 100 : 0;
+
+        return {
+          'ID Venda': sale.id,
+          'Data': new Date(sale.purchase_date || sale.created_at).toLocaleDateString('pt-BR'),
+          'Cliente': sale.client_name,
+          'Vendedor': sale.seller_name,
+          'Itens': (sale.item_types || []).join(', '),
+          'Valor Original (R$)': originalPrice,
+          'Valor com Desconto (R$)': negotiatedPrice,
+          'Desconto Aplicado (R$)': discountValue,
+          'Desconto (%)': discountPercentage.toFixed(2) + '%',
+          'Método Pagto': sale.payment_method || 'PIX',
+          'Status': sale.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE'
+        };
+      })
 
       // 3. Preparar os dados das parcelas
       const worksheetData = installments.map(inst => ({
@@ -79,14 +90,15 @@ const Sales = () => {
         'Empresa': inst.client_company || 'Pessoa Física',
         'Nº Parcela': inst.installment_number,
         'Vencimento': new Date(inst.due_date).toLocaleDateString('pt-BR'),
-        'Valor (R$)': parseFloat(inst.amount),
+        'Valor Parcela (R$)': parseFloat(inst.amount),
         'Status': inst.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE',
         'Data de Pagamento': inst.paid_at ? new Date(inst.paid_at).toLocaleDateString('pt-BR') : '-'
       }))
 
       // 4. Adicionar uma folha de resumo
       const summaryData = [
-        { 'Métrica': 'Receita Bruta Total', 'Valor': sales.reduce((acc, s) => acc + parseFloat(s.total_price), 0) },
+        { 'Métrica': 'Receita Bruta Total (Original)', 'Valor': sales.reduce((acc, s) => acc + (parseFloat(s.original_price) || parseFloat(s.total_price)), 0) },
+        { 'Métrica': 'Receita Líquida Total (Negociada)', 'Valor': sales.reduce((acc, s) => acc + parseFloat(s.total_price), 0) },
         { 'Métrica': 'Volume de Vendas', 'Valor': sales.length },
         { 'Métrica': 'Ticket Médio', 'Valor': sales.length > 0 ? (sales.reduce((acc, s) => acc + parseFloat(s.total_price), 0) / sales.length) : 0 },
         { 'Métrica': 'Total Recebido (Líquido)', 'Valor': installments.filter(i => i.status === 'paid').reduce((acc, i) => acc + parseFloat(i.amount), 0) },
@@ -102,12 +114,12 @@ const Sales = () => {
 
       // 6. Configurar larguras de colunas
       wsSales['!cols'] = [
-        { wch: 10 }, { wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+        { wch: 10 }, { wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 40 }, { wch: 18 }, { wch: 22 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
       ]
       wsInstallments['!cols'] = [
         { wch: 10 }, { wch: 10 }, { wch: 35 }, { wch: 30 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
       ]
-      wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }]
+      wsSummary['!cols'] = [{ wch: 35 }, { wch: 20 }]
 
       // 7. Adicionar ao Workbook
       XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo Executivo")
@@ -115,14 +127,73 @@ const Sales = () => {
       XLSX.utils.book_append_sheet(wb, wsInstallments, "Detalhamento de Parcelas")
 
       // 8. Gerar arquivo
-      const fileName = `Balanço_Vendas_Completo_${new Date().toISOString().split('T')[0]}.xlsx`
+      const fileName = `Relatorio_Vendas_Completo_${new Date().toISOString().split('T')[0]}.xlsx`
       XLSX.writeFile(wb, fileName)
+      
+      setExportSuccess(true)
     } catch (error) {
       console.error("Erro ao exportar Excel:", error)
       alert("Erro ao gerar relatório Excel.")
     } finally {
       setIsExporting(false)
     }
+  }
+
+  if (exportSuccess) {
+    return (
+      <div className="success-screen animate-fade flex-column align-center justify-center">
+        <div className="dashboard-noise"></div>
+        <div className="glass success-card text-center p-60">
+          <div className="success-icon-wrapper mb-32">
+            <CheckCircle2 size={80} className="color-emerald" />
+          </div>
+          <h1 className="text-white mb-16">Balanço Exportado!</h1>
+          <p className="color-muted mb-40 text-lg">O relatório financeiro completo foi gerado com sucesso. O download iniciará automaticamente.</p>
+          
+          <div className="flex gap-16 justify-center">
+            <button className="premium-btn btn-glass px-32 py-16" onClick={() => setExportSuccess(false)}>
+              Voltar aos Registros
+            </button>
+            <button className="premium-btn btn-gold px-32 py-16" onClick={() => window.location.href = '/'}>
+              Ir para o Dashboard
+            </button>
+          </div>
+        </div>
+
+        <style>{`
+          .success-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 0%, #0c0e14 0%, #06070a 100%);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .success-card {
+            max-width: 600px;
+            border-radius: 32px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 1;
+          }
+          .success-icon-wrapper {
+            background: rgba(16, 185, 129, 0.1);
+            width: 140px;
+            height: 140px;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+          }
+          .color-emerald { color: #10b981; }
+          .text-lg { font-size: 18px; }
+        `}</style>
+      </div>
+    )
   }
 
   const handlePrintReceipt = (sale) => {

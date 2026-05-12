@@ -22,7 +22,7 @@ export const Layout = () => {
   const navItems = [
     { name: 'Dashboard', icon: <LayoutDashboard size={18} strokeWidth={2.5} />, path: '/', roles: ['admin', 'treasurer'] },
     { name: 'Espaços', icon: <Image size={18} strokeWidth={2.5} />, path: '/spaces', roles: ['admin'] },
-    { name: 'Financeiro', icon: <DollarSign size={18} strokeWidth={2.5} />, path: '/sales', roles: ['admin', 'treasurer'] },
+    { name: 'Financeiro', icon: <DollarSign size={18} strokeWidth={2.5} />, path: '/financial', roles: ['admin', 'treasurer'] },
     { name: 'Vendedores', icon: <Users size={18} strokeWidth={2.5} />, path: '/sellers', roles: ['admin'] },
     { name: 'Clientes', icon: <Users size={18} strokeWidth={2.5} />, path: '/customers', roles: ['admin'] },
     { name: 'Configurações', icon: <Settings size={18} strokeWidth={2.5} />, path: '/settings', roles: ['admin'] },

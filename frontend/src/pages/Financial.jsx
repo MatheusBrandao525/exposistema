@@ -59,6 +59,7 @@ const Financial = () => {
   })
   const [loading, setLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  const [exportSuccess, setExportSuccess] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
@@ -97,29 +98,40 @@ const Financial = () => {
         'Empresa': inst.client_company || 'Pessoa Física',
         'Nº Parcela': inst.installment_number,
         'Vencimento': new Date(inst.due_date).toLocaleDateString('pt-BR'),
-        'Valor (R$)': parseFloat(inst.amount),
+        'Valor Parcela (R$)': parseFloat(inst.amount),
         'Status': inst.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE',
         'Data de Pagamento': inst.paid_at ? new Date(inst.paid_at).toLocaleDateString('pt-BR') : '-'
       }))
 
       // 2. Preparar os dados das vendas (Consolidado)
-      const formattedSalesData = salesData.map(sale => ({
-        'ID Venda': sale.id,
-        'Data': new Date(sale.purchase_date || sale.created_at).toLocaleDateString('pt-BR'),
-        'Cliente': sale.client_name,
-        'Vendedor': sale.seller_name,
-        'Itens': sale.item_types.join(', '),
-        'Valor Total (R$)': parseFloat(sale.total_price),
-        'Método Pagto': sale.payment_method || 'PIX',
-        'Status': sale.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE'
-      }))
+      const formattedSalesData = salesData.map(sale => {
+        const originalPrice = parseFloat(sale.original_price) || parseFloat(sale.total_price);
+        const negotiatedPrice = parseFloat(sale.total_price);
+        const discountValue = originalPrice - negotiatedPrice;
+        const discountPercentage = originalPrice > 0 ? (discountValue / originalPrice) * 100 : 0;
+
+        return {
+          'ID Venda': sale.id,
+          'Data': new Date(sale.purchase_date || sale.created_at).toLocaleDateString('pt-BR'),
+          'Cliente': sale.client_name,
+          'Vendedor': sale.seller_name,
+          'Itens': (sale.item_types || []).join(', '),
+          'Valor Original (R$)': originalPrice,
+          'Valor com Desconto (R$)': negotiatedPrice,
+          'Desconto Aplicado (R$)': discountValue,
+          'Desconto (%)': discountPercentage.toFixed(2) + '%',
+          'Método Pagto': sale.payment_method || 'PIX',
+          'Status': sale.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE'
+        };
+      })
 
       // 3. Adicionar uma folha de resumo
       const summaryData = [
         { 'Métrica': 'Total Recebido (Líquido)', 'Valor': parseFloat(stats.total_paid) },
         { 'Métrica': 'Total a Receber (Pendente)', 'Valor': parseFloat(stats.total_pending) },
         { 'Métrica': 'Total em Atraso', 'Valor': parseFloat(stats.total_overdue) },
-        { 'Métrica': 'Receita Bruta Total', 'Valor': salesData.reduce((acc, s) => acc + parseFloat(s.total_price), 0) },
+        { 'Métrica': 'Receita Bruta Total (Original)', 'Valor': salesData.reduce((acc, s) => acc + (parseFloat(s.original_price) || parseFloat(s.total_price)), 0) },
+        { 'Métrica': 'Receita Líquida Total (Negociada)', 'Valor': salesData.reduce((acc, s) => acc + parseFloat(s.total_price), 0) },
         { 'Métrica': 'Volume de Vendas', 'Valor': salesData.length }
       ]
 
@@ -132,12 +144,12 @@ const Financial = () => {
 
       // 5. Configurar larguras de colunas
       wsInstallments['!cols'] = [
-        { wch: 10 }, { wch: 10 }, { wch: 35 }, { wch: 30 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
+        { wch: 10 }, { wch: 10 }, { wch: 35 }, { wch: 30 }, { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 20 }
       ]
       wsSales['!cols'] = [
-        { wch: 10 }, { wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+        { wch: 10 }, { wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 40 }, { wch: 18 }, { wch: 22 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
       ]
-      wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }]
+      wsSummary['!cols'] = [{ wch: 35 }, { wch: 20 }]
 
       // 6. Adicionar ao Workbook
       XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo Executivo")
@@ -147,6 +159,9 @@ const Financial = () => {
       // 7. Gerar arquivo
       const fileName = `Relatorio_Financeiro_Completo_${new Date().toISOString().split('T')[0]}.xlsx`
       XLSX.writeFile(wb, fileName)
+      
+      // Mostrar tela de sucesso
+      setExportSuccess(true)
     } catch (error) {
       console.error("Erro ao exportar Excel:", error)
       alert("Erro ao gerar relatório Excel. Verifique o console para mais detalhes.")
@@ -172,6 +187,56 @@ const Financial = () => {
     i.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     i.client_company.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  if (exportSuccess) {
+    return (
+      <div className="success-screen animate-fade flex-column align-center justify-center">
+        <div className="glass success-card text-center p-60">
+          <div className="success-icon-wrapper mb-32">
+            <CheckCircle2 size={80} className="color-emerald" />
+          </div>
+          <h1 className="text-white mb-16">Relatório Exportado!</h1>
+          <p className="color-muted mb-40 text-lg">O arquivo Excel foi gerado com sucesso e o download já deve ter iniciado no seu navegador.</p>
+          
+          <div className="flex gap-16 justify-center">
+            <button className="btn btn-secondary px-32 py-16" onClick={() => setExportSuccess(false)}>
+              Voltar ao Financeiro
+            </button>
+            <button className="btn btn-primary px-32 py-16" onClick={() => window.location.href = '/'}>
+              Ir para o Dashboard
+            </button>
+          </div>
+        </div>
+
+        <style>{`
+          .success-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-main);
+            z-index: 2000;
+          }
+          .success-card {
+            max-width: 600px;
+            border-radius: 32px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+          }
+          .success-icon-wrapper {
+            background: rgba(16, 185, 129, 0.1);
+            width: 140px;
+            height: 140px;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+          }
+          .text-lg { font-size: 18px; }
+        `}</style>
+      </div>
+    )
+  }
 
   return (
     <div className="financial-page animate-fade">
