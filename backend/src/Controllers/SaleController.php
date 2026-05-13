@@ -147,7 +147,7 @@ class SaleController extends Controller
 
             if ($sale['user_id'] != $user['id']) throw new Exception("Acesso negado");
 
-            $statusMap = ['pendente' => 'pending', 'pago' => 'paid', 'expirado' => 'expired', 'recusado' => 'refused', 'cancelado' => 'cancelled'];
+            $statusMap = ['pendente' => 'pending', 'pago' => 'paid', 'expirado' => 'expired', 'recusado' => 'refused', 'cancelado' => 'cancelled', 'cancelada' => 'cancelled'];
             $finalStatus = $statusMap[$status] ?? $status;
             $spaceStatus = in_array($finalStatus, ['cancelled', 'refused', 'expired']) ? 'available' : 'sold';
 
