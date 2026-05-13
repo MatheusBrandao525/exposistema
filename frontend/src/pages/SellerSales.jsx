@@ -189,6 +189,7 @@ const SellerSales = () => {
       items: cart.map(item => ({ id: item.id, price: getItemPrice(item), quantity: item.quantity }))
     }
 
+    try {
       const grossTotal = cart.reduce((acc, item) => acc + (item.base_price * item.quantity), 0);
       const res = await api.post('/sales', payload)
       const data = await res.json()
