@@ -90,7 +90,7 @@ class SaleController extends Controller
 
     public function show(int $id): void
     {
-        $stmt = $this->db->prepare("SELECT s.*, s.negotiated_price as total_price, c.name as client_name, u.name as seller_name FROM sales s JOIN clients c ON s.client_id = c.id JOIN users u ON s.user_id = u.id WHERE s.id = ?");
+        $stmt = $this->db->prepare("SELECT s.*, s.negotiated_price as total_price, (SELECT SUM(base_price) FROM ad_spaces JOIN sale_items ON ad_spaces.id = sale_items.ad_space_id WHERE sale_items.sale_id = s.id) as original_price, c.name as client_name, u.name as seller_name FROM sales s JOIN clients c ON s.client_id = c.id JOIN users u ON s.user_id = u.id WHERE s.id = ?");
         $stmt->execute([$id]);
         $sale = $stmt->fetch();
         if ($sale) {
@@ -114,6 +114,7 @@ class SaleController extends Controller
         $sql = "SELECT 
                     s.*, 
                     s.negotiated_price as total_price,
+                    (SELECT SUM(base_price) FROM ad_spaces JOIN sale_items ON ad_spaces.id = sale_items.ad_space_id WHERE sale_items.sale_id = s.id) as original_price,
                     c.name as client_name, 
                     u.name as seller_name, 
                     (SELECT GROUP_CONCAT(asp.name) FROM ad_spaces asp JOIN sale_items si ON asp.id = si.ad_space_id WHERE si.sale_id = s.id) as item_names

@@ -206,10 +206,19 @@ const Sales = () => {
     
     const itemsHtml = sale.item_types.map(item => `
       <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 14px;">
-        <span style="color: #444; font-weight: 500;">Espaço / Categoria: <strong>${item}</strong></span>
-        <span style="font-weight: 700; color: #000;">1 UN</span>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <span style="color: #444; font-weight: 500;">Espaço / Categoria: <strong>${item}</strong></span>
+          <span style="font-size: 11px; color: #888;">Serviço de Mídia & Publicidade</span>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-weight: 700; color: #000; display: block;">1 UN</span>
+        </div>
       </div>
     `).join('');
+
+    const grossPrice = parseFloat(sale.original_price || sale.total_price || 0);
+    const totalPrice = parseFloat(sale.total_price || 0);
+    const discountValue = grossPrice - totalPrice;
 
     const statusLabel = sale.status === 'paid' ? 'LIQUIDADO' : 'PENDENTE';
     const statusColor = sale.status === 'paid' ? '#10b981' : '#f59e0b';
@@ -234,11 +243,15 @@ const Sales = () => {
           .data-item label { display: block; font-size: 10px; font-weight: 800; color: #999; text-transform: uppercase; margin-bottom: 4px; }
           .data-item span { font-size: 15px; font-weight: 700; display: block; }
           
-          .items-list { margin-bottom: 40px; }
+          .items-list { margin-bottom: 30px; }
           
-          .total-box { background: #f9fafb; padding: 30px; border-radius: 12px; border: 1px solid #efefef; display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-          .total-label { font-size: 14px; font-weight: 800; color: #444; }
-          .total-value { font-size: 32px; font-weight: 900; color: #000; }
+          .values-breakdown { background: #f8fafc; padding: 24px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #f1f5f9; }
+          .breakdown-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+          .breakdown-row.discount { color: #10b981; font-weight: 600; }
+          
+          .total-box { background: #000; padding: 30px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; color: #fff; }
+          .total-label { font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+          .total-value { font-size: 36px; font-weight: 900; color: #fff; }
           
           .status-badge { display: inline-block; padding: 8px 16px; border-radius: 100px; font-size: 12px; font-weight: 900; color: ${statusColor}; background: ${statusBg}; border: 1px solid ${statusColor}33; }
           
@@ -273,8 +286,8 @@ const Sales = () => {
               <span>${sale.client_name}</span>
             </div>
             <div class="data-item">
-              <label>Tipo de Registro</label>
-              <span>${sale.company || 'Investidor Individual'}</span>
+              <label>Emissor / Vendedor</label>
+              <span>${sale.seller_name}</span>
             </div>
             <div class="data-item">
               <label>Data Transação</label>
@@ -282,7 +295,7 @@ const Sales = () => {
             </div>
             <div class="data-item">
               <label>Meio de Pagamento</label>
-              <span>${sale.payment_method || 'PIX'}</span>
+              <span>${(sale.payment_method || 'PIX').toUpperCase()}</span>
             </div>
           </div>
 
@@ -291,20 +304,33 @@ const Sales = () => {
             ${itemsHtml}
           </div>
 
+          <div class="values-breakdown">
+            <div class="breakdown-row">
+              <span>Subtotal (Valor Bruto)</span>
+              <span>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(grossPrice)}</span>
+            </div>
+            ${discountValue > 0 ? `
+            <div class="breakdown-row discount">
+              <span>Desconto Aplicado (Sócio/Convênio)</span>
+              <span>- ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(discountValue)}</span>
+            </div>
+            ` : ''}
+          </div>
+
           <div class="total-box">
             <div>
-              <span class="total-label">VALOR TOTAL DO CONTRATO</span>
+              <span class="total-label">VALOR FINAL DO CONTRATO</span>
               <div style="margin-top: 8px;">
                 <span class="status-badge">${statusLabel}</span>
               </div>
             </div>
-            <span class="total-value">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.total_price)}</span>
+            <span class="total-value">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPrice)}</span>
           </div>
 
           <div class="footer">
             <div class="vendedor-info">
-              <h4>Responsável: ${sale.seller_name}</h4>
-              <p>Documento gerado automaticamente pelo sistema de gestão.</p>
+              <h4>Responsável Técnico: ${sale.seller_name}</h4>
+              <p>Documento gerado eletronicamente. Reservas sujeitas aos termos de contrato.</p>
             </div>
             <div class="timestamp">
               EMITIDO EM: ${new Date().toLocaleString('pt-BR')}
@@ -315,7 +341,6 @@ const Sales = () => {
           window.onload = function() {
             setTimeout(function() {
               window.print();
-              // window.close(); // Opcional: fechar após imprimir
             }, 500);
           }
         </script>
