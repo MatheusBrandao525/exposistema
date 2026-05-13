@@ -399,7 +399,22 @@ Obrigado por fechar negócio conosco!`;
               </button>
             </div>
 
-            <button className="btn btn-ghost w-full py-16 font-black color-muted uppercase tracking-widest text-xs" style={{ border: '1px solid rgba(255,255,255,0.05)' }} onClick={() => { setSuccess(false); setLastSale(null); window.location.reload(); }}>VOLTAR AO TERMINAL</button>
+            <button 
+              className="btn btn-ghost w-full py-16 font-black color-muted uppercase tracking-widest text-xs" 
+              style={{ border: '1px solid rgba(255,255,255,0.05)' }} 
+              onClick={() => { 
+                setSuccess(false); 
+                setLastSale(null); 
+                setCart([]);
+                setSelectedClient(null);
+                setStep(1);
+                setObservations('');
+                setSearchTerm('');
+                fetchMySales();
+              }}
+            >
+              VOLTAR AO TERMINAL
+            </button>
          </motion.div>
       </div>
     )
