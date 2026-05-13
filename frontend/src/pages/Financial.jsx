@@ -318,7 +318,6 @@ const Financial = () => {
               <th>Vencimento</th>
               <th>Valor</th>
               <th>Status</th>
-              <th className="text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -346,15 +345,6 @@ const Financial = () => {
                   <span className={`status-badge ${inst.status === 'paid' ? 'paid' : 'pending'}`}>
                     {inst.status === 'paid' ? 'Liquidado' : 'Pendente'}
                   </span>
-                </td>
-                <td className="text-right">
-                  <button 
-                    onClick={() => handleTogglePaid(inst.id, inst.status)}
-                    className={`action-btn ${inst.status === 'paid' ? 'undo' : 'pay'}`}
-                    title={inst.status === 'paid' ? 'Marcar como Pendente' : 'Marcar como Pago'}
-                  >
-                    {inst.status === 'paid' ? <ArrowDownCircle size={18} /> : <CheckCircle2 size={18} />}
-                  </button>
                 </td>
               </tr>
             ))}
