@@ -14,6 +14,8 @@ const AdSpaces = () => {
   const [types, setTypes] = useState([])
   const [formData, setFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true })
   const [saving, setSaving] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
 
   useEffect(() => {
     fetchSpaces()
@@ -69,6 +71,17 @@ const AdSpaces = () => {
     const typeMatch = s.type_name && s.type_name.toLowerCase().includes(searchTerm.toLowerCase());
     return nameMatch || typeMatch;
   });
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredSpaces.length / itemsPerPage);
+  const paginatedSpaces = filteredSpaces.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleAddSpace = async (e) => {
     e.preventDefault();
@@ -148,7 +161,7 @@ const AdSpaces = () => {
                    </div>
                 </td>
               </tr>
-            ) : filteredSpaces.length > 0 ? filteredSpaces.map(space => (
+            ) : paginatedSpaces.length > 0 ? paginatedSpaces.map(space => (
               <tr key={space.id} className="row-hover">
                 <td className="col-id">
                    <span className="text-xs color-muted font-bold">#{space.id.toString().padStart(4, '0')}</span>
@@ -187,6 +200,43 @@ const AdSpaces = () => {
             )}
           </tbody>
         </table>
+
+        {totalPages > 1 && (
+          <div className="pagination-footer">
+            <div className="pagination-info">
+              Exibindo <strong>{paginatedSpaces.length}</strong> de <strong>{filteredSpaces.length}</strong> ativos
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="pag-btn" 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+              >
+                Anterior
+              </button>
+              
+              <div className="page-numbers">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button 
+                    key={i + 1}
+                    className={`page-num ${currentPage === i + 1 ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button 
+                className="pag-btn" 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Detalhes */}
@@ -447,6 +497,19 @@ const AdSpaces = () => {
 
         .spinner, .mini-spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.05); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Pagination Styles */
+        .pagination-footer { padding: 20px 48px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .pagination-info { font-size: 13px; color: var(--text-muted); }
+        .pagination-info strong { color: #fff; }
+        .pagination-controls { display: flex; align-items: center; gap: 20px; }
+        .page-numbers { display: flex; gap: 8px; }
+        .pag-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .pag-btn:hover:not(:disabled) { background: rgba(255,255,255,0.08); border-color: var(--primary); }
+        .page-num { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .page-num:hover { border-color: var(--primary); color: #fff; }
+        .page-num.active { background: var(--primary); border-color: var(--primary); color: #000; }
       `}</style>
     </div>
   )
