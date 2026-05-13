@@ -237,11 +237,16 @@ class SaleController extends Controller
 
         $spaceStatus = in_array($finalStatus, ['cancelled', 'refused', 'expired']) ? 'available' : 'sold';
         
-        $sqlSpace = "UPDATE ad_spaces 
-                     JOIN sale_items ON ad_spaces.id = sale_items.ad_space_id 
-                     SET ad_spaces.status = ? 
-                     WHERE sale_items.sale_id = ?";
         $this->db->prepare($sqlSpace)->execute([$spaceStatus, $id]);
+        
+        // Sincronizar status das parcelas
+        if ($finalStatus === 'paid') {
+            $this->db->prepare("UPDATE sale_installments SET status = 'paid', paid_at = NOW() WHERE sale_id = ? AND status = 'pending'")->execute([$id]);
+        } elseif (in_array($finalStatus, ['cancelled', 'refused', 'expired'])) {
+            $this->db->prepare("UPDATE sale_installments SET status = ? WHERE sale_id = ?")->execute([$finalStatus, $id]);
+        } elseif ($finalStatus === 'pending') {
+            $this->db->prepare("UPDATE sale_installments SET status = 'pending', paid_at = NULL WHERE sale_id = ?")->execute([$id]);
+        }
 
         $this->jsonResponse(['success' => true]);
     }
