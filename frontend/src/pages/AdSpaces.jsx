@@ -3,31 +3,41 @@ import { Plus, Filter, Search, Tag, MapPin, DollarSign, X, User, ShoppingCart, C
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../api'
 
-const AdSpaceCard = ({ space, onDetails }) => (
-  <div className="glass ad-card animate-fade">
-    <div className="card-image">
-      <div className="card-overlay"></div>
-      <div className="card-initial">{space.name[0]}</div>
-      <span className={`status-badge-modern ${space.status}`}>
-        {space.status === 'available' ? 'Disponível' : 'Indisponível'}
-      </span>
-    </div>
-    <div className="card-body">
-      <div className="card-meta">
-        <span className="type-tag">{space.type_name || 'Espaço'}</span>
-        <div className="location"><MapPin size={12} /> {space.location || 'Pavilhão Principal'}</div>
+const AdSpaceCard = ({ space, onDetails }) => {
+  try {
+    const formattedPrice = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(space.base_price || 0);
+    const initial = space.name ? space.name[0] : '?';
+    
+    return (
+      <div className="glass ad-card animate-fade">
+        <div className="card-image">
+          <div className="card-overlay"></div>
+          <div className="card-initial">{initial}</div>
+          <span className={`status-badge-modern ${space.status}`}>
+            {space.status === 'available' ? 'Disponível' : 'Indisponível'}
+          </span>
+        </div>
+        <div className="card-body">
+          <div className="card-meta">
+            <span className="type-tag">{space.type_name || 'Espaço'}</span>
+            <div className="location"><MapPin size={12} /> {space.location || 'Pavilhão Principal'}</div>
+          </div>
+          <h3 className="card-title">{space.name || 'Sem nome'}</h3>
+          <div className="card-price">
+            <span className="label">Valor Base</span>
+            <span className="value">{formattedPrice}</span>
+          </div>
+          <button className="details-button" onClick={() => onDetails(space)}>
+            {space.status === 'available' ? 'Ver Detalhes' : 'Detalhes da Venda'}
+          </button>
+        </div>
       </div>
-      <h3 className="card-title">{space.name}</h3>
-      <div className="card-price">
-        <span className="label">Valor Base</span>
-        <span className="value">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(space.base_price)}</span>
-      </div>
-      <button className="details-button" onClick={() => onDetails(space)}>
-        {space.status === 'available' ? 'Ver Detalhes' : 'Detalhes da Venda'}
-      </button>
-    </div>
-  </div>
-)
+    );
+  } catch (err) {
+    console.error("Error rendering AdSpaceCard:", err, space);
+    return <div className="card-error">Erro ao renderizar card</div>;
+  }
+}
 
 const AdSpaces = () => {
   const [spaces, setSpaces] = useState([])
@@ -90,10 +100,11 @@ const AdSpaces = () => {
     }
   }
 
-  const filteredSpaces = spaces.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (s.type_name && s.type_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const filteredSpaces = spaces.filter(s => {
+    const nameMatch = s.name && s.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const typeMatch = s.type_name && s.type_name.toLowerCase().includes(searchTerm.toLowerCase());
+    return nameMatch || typeMatch;
+  });
 
   const handleAddSpace = async (e) => {
     e.preventDefault();
@@ -156,11 +167,20 @@ const AdSpaces = () => {
            <span>Sincronizando inventário...</span>
         </div>
       ) : (
-        <div className="spaces-grid-premium">
-          {filteredSpaces.map(space => (
-            <AdSpaceCard key={space.id} space={space} onDetails={handleOpenDetails} />
-          ))}
-        </div>
+        <>
+          {console.log("Rendering grid. Filtered spaces count:", filteredSpaces.length)}
+          <div className="spaces-grid-premium">
+            {filteredSpaces.map(space => {
+              console.log("Rendering space card for:", space.name);
+              return <AdSpaceCard key={space.id} space={space} onDetails={handleOpenDetails} />;
+            })}
+          </div>
+          {filteredSpaces.length === 0 && (
+            <div className="empty-state">
+              <p>Nenhum espaço encontrado para os critérios de busca.</p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal de Detalhes */}
