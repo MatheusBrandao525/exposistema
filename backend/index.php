@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 }
 
 header('Content-Type: application/json');
+error_log("Incoming Request: " . $_SERVER['REQUEST_METHOD'] . " " . $_SERVER['REQUEST_URI']);
 
 // Simple PSR-4 Autoloader
 spl_autoload_register(function ($class) {

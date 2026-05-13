@@ -55,13 +55,21 @@ const AdSpaces = () => {
 
   const fetchSpaces = () => {
     setLoading(true)
+    console.log("Fetching spaces from /spaces...")
     api.get('/spaces')
-      .then(res => res.json())
+      .then(res => {
+        console.log("Response status:", res.status)
+        return res.json()
+      })
       .then(data => {
+        console.log("Spaces received:", data)
         setSpaces(data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        console.error("Error fetching spaces:", err)
+        setLoading(false)
+      })
   }
 
   const handleOpenDetails = async (space) => {

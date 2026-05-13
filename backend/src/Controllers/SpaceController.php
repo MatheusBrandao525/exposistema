@@ -15,15 +15,31 @@ class SpaceController extends Controller
 
     public function index(): void
     {
+        $isAdmin = \App\Core\Auth::isAdmin();
         $sql = "SELECT s.*, t.name as type_name FROM ad_spaces s LEFT JOIN ad_space_types t ON s.ad_space_type_id = t.id";
         
         // Se não for admin, filtrar apenas disponíveis para o terminal de vendas
-        if (!\App\Core\Auth::isAdmin()) {
+        if (!$isAdmin) {
             $sql .= " WHERE s.status = 'available'";
         }
         
-        $stmt = $this->db->query($sql);
-        $this->jsonResponse($stmt->fetchAll());
+        error_log("SpaceController::index - isAdmin: " . ($isAdmin ? 'true' : 'false'));
+        error_log("SpaceController::index - SQL: " . $sql);
+
+        try {
+            $stmt = $this->db->query($sql);
+            $results = $stmt->fetchAll();
+            
+            error_log("SpaceController::index - Results found: " . count($results));
+            if (count($results) > 0) {
+                error_log("SpaceController::index - Sample result: " . json_encode($results[0]));
+            }
+            
+            $this->jsonResponse($results);
+        } catch (\PDOException $e) {
+            error_log("SpaceController::index - PDO Error: " . $e->getMessage());
+            $this->jsonResponse(['error' => 'Erro ao buscar espaços no banco de dados', 'details' => $e->getMessage()], 500);
+        }
     }
 
     public function store(): void
