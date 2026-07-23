@@ -32,6 +32,29 @@ try {
         echo "[INFO] Coluna 'allows_discount' já existe ou erro ignorado.\n";
     }
 
+    // 2b. Atualizar Tabela de Vendas (Adicionar card_brand, card_fee_rate, card_fee_amount)
+    try {
+        $db->exec("ALTER TABLE sales ADD COLUMN card_brand VARCHAR(50) NULL");
+        echo "[OK] Coluna 'card_brand' adicionada à tabela 'sales'.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Coluna 'card_brand' já existe ou erro ignorado.\n";
+    }
+
+    try {
+        $db->exec("ALTER TABLE sales ADD COLUMN card_fee_rate DECIMAL(5,2) NULL DEFAULT 0.00");
+        echo "[OK] Coluna 'card_fee_rate' adicionada à tabela 'sales'.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Coluna 'card_fee_rate' já existe ou erro ignorado.\n";
+    }
+
+    try {
+        $db->exec("ALTER TABLE sales ADD COLUMN card_fee_amount DECIMAL(12,2) NULL DEFAULT 0.00");
+        echo "[OK] Coluna 'card_fee_amount' adicionada à tabela 'sales'.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Coluna 'card_fee_amount' já existe ou erro ignorado.\n";
+    }
+
+
     // 3. Criar Tipo de Espaço 5 (Patrocínio e Taxas)
     $stmt = $db->prepare("SELECT id FROM ad_space_types WHERE id = 5");
     $stmt->execute();
