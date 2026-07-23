@@ -46,14 +46,15 @@ class SpaceController extends Controller
     {
         \App\Core\Auth::checkRole(['admin']);
         $data = $this->getPostData();
-        $sql = "INSERT INTO ad_spaces (event_id, ad_space_type_id, name, base_price, status, allows_discount) VALUES (?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO ad_spaces (event_id, ad_space_type_id, name, base_price, status, allows_discount, controls_stock) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $this->db->prepare($sql)->execute([
             1, 
             $data['ad_space_type_id'], 
             $data['name'], 
             $data['base_price'], 
             'available',
-            $data['allows_discount'] ?? true
+            $data['allows_discount'] ?? true,
+            $data['controls_stock'] ?? 0
         ]);
         $this->jsonResponse(['success' => true, 'id' => $this->db->lastInsertId()]);
     }
@@ -62,13 +63,14 @@ class SpaceController extends Controller
     {
         \App\Core\Auth::checkRole(['admin']);
         $data = $this->getPostData();
-        $sql = "UPDATE ad_spaces SET name = ?, ad_space_type_id = ?, base_price = ?, status = ?, allows_discount = ? WHERE id = ?";
+        $sql = "UPDATE ad_spaces SET name = ?, ad_space_type_id = ?, base_price = ?, status = ?, allows_discount = ?, controls_stock = ? WHERE id = ?";
         $this->db->prepare($sql)->execute([
             $data['name'], 
             $data['ad_space_type_id'], 
             $data['base_price'], 
             $data['status'], 
             $data['allows_discount'] ?? true,
+            $data['controls_stock'] ?? 0,
             $id
         ]);
         $this->jsonResponse(['success' => true]);

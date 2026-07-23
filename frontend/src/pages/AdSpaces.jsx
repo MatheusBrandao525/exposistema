@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Search, MapPin, DollarSign, X, ShoppingCart, Calendar, Info, LayoutGrid, Tag, User } from 'lucide-react'
+import { Plus, Search, MapPin, DollarSign, X, ShoppingCart, Calendar, Info, LayoutGrid, Tag, User, Edit3 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../api'
 
@@ -10,9 +10,12 @@ const AdSpaces = () => {
   const [bookingDetails, setBookingDetails] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingSpace, setEditingSpace] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [types, setTypes] = useState([])
-  const [formData, setFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true })
+  const [formData, setFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false })
+  const [editFormData, setEditFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false, status: 'available' })
   const [saving, setSaving] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
@@ -91,19 +94,61 @@ const AdSpaces = () => {
         name: formData.name,
         ad_space_type_id: formData.ad_space_type_id,
         base_price: parseFloat(formData.base_price),
-        allows_discount: formData.allows_discount
+        allows_discount: formData.allows_discount,
+        controls_stock: formData.controls_stock
       };
       const res = await api.post('/spaces', payload);
       const data = await res.json();
       if (data.success) {
         setShowAddModal(false);
-        setFormData({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true });
+        setFormData({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false });
         fetchSpaces();
       } else {
         alert(data.error || 'Erro ao criar espaço');
       }
     } catch (err) {
       alert('Erro ao criar espaço');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const handleOpenEdit = (space) => {
+    setEditingSpace(space);
+    setEditFormData({
+      name: space.name,
+      ad_space_type_id: space.ad_space_type_id,
+      base_price: space.base_price,
+      allows_discount: space.allows_discount ? true : false,
+      controls_stock: space.controls_stock ? true : false,
+      status: space.status || 'available'
+    });
+    setShowEditModal(true);
+  }
+
+  const handleUpdateSpace = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        name: editFormData.name,
+        ad_space_type_id: editFormData.ad_space_type_id,
+        base_price: parseFloat(editFormData.base_price),
+        allows_discount: editFormData.allows_discount,
+        controls_stock: editFormData.controls_stock,
+        status: editFormData.status
+      };
+      const res = await api.put(`/spaces/${editingSpace.id}`, payload);
+      const data = await res.json();
+      if (data.success) {
+        setShowEditModal(false);
+        setEditingSpace(null);
+        fetchSpaces();
+      } else {
+        alert(data.error || 'Erro ao atualizar espaço');
+      }
+    } catch (err) {
+      alert('Erro ao atualizar espaço');
     } finally {
       setSaving(false);
     }
@@ -186,8 +231,11 @@ const AdSpaces = () => {
                    </span>
                 </td>
                 <td className="col-actions text-right">
-                   <button className="premium-action-btn" onClick={() => handleOpenDetails(space)}>
+                   <button className="premium-action-btn" onClick={() => handleOpenDetails(space)} style={{ marginRight: '8px' }}>
                       <Info size={18} strokeWidth={2.5} />
+                   </button>
+                   <button className="premium-action-btn" onClick={() => handleOpenEdit(space)}>
+                      <Edit3 size={18} strokeWidth={2.5} />
                    </button>
                 </td>
               </tr>
@@ -403,11 +451,124 @@ const AdSpaces = () => {
                         />
                         <label htmlFor="allowsDiscount" style={{ fontSize: '14px', color: '#fff', textTransform: 'none' }}>Permite Desconto para Sócios</label>
                      </div>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <input 
+                           type="checkbox" 
+                           id="controlsStock" 
+                           checked={formData.controls_stock} 
+                           onChange={e => setFormData({...formData, controls_stock: e.target.checked})} 
+                           style={{ width: '18px', height: '18px' }}
+                        />
+                        <label htmlFor="controlsStock" style={{ fontSize: '14px', color: '#fff', textTransform: 'none' }}>Controla Estoque?</label>
+                     </div>
                      
                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                         <button type="button" className="btn-minimal" onClick={() => setShowAddModal(false)}>Cancelar</button>
                         <button type="submit" className="btn btn-primary" disabled={saving}>
                            {saving ? 'Salvando...' : 'Salvar Ativo'}
+                        </button>
+                     </div>
+                  </form>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Editar Ativo */}
+      <AnimatePresence>
+        {showEditModal && editingSpace && (
+          <div className="modal-overlay-premium" onClick={() => setShowEditModal(false)}>
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.9, y: 30 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 30 }}
+               className="modal-card-premium glass"
+               style={{ maxWidth: '500px', display: 'flex', flexDirection: 'column' }}
+               onClick={e => e.stopPropagation()}
+            >
+               <div className="modal-header">
+                  <div className="header-text">
+                    <h3>Editar Ativo</h3>
+                    <span className="type-meta">Alterar dados do espaço #{editingSpace.id}</span>
+                  </div>
+                  <button className="close-x" onClick={() => setShowEditModal(false)}><X size={20}/></button>
+               </div>
+
+               <div style={{ padding: '32px' }}>
+                  <form onSubmit={handleUpdateSpace} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                     <div className="form-group">
+                        <label>Nome do Espaço</label>
+                        <input 
+                           type="text" 
+                           required 
+                           value={editFormData.name} 
+                           onChange={e => setEditFormData({...editFormData, name: e.target.value})} 
+                        />
+                     </div>
+                     <div className="form-group">
+                        <label>Categoria</label>
+                        <select 
+                           required 
+                           value={editFormData.ad_space_type_id} 
+                           onChange={e => setEditFormData({...editFormData, ad_space_type_id: e.target.value})} 
+                           style={{ color: '#000' }}
+                        >
+                           <option value="" disabled>Selecione uma categoria</option>
+                           {types.map(t => (
+                              <option key={t.id} value={t.id}>{t.name}</option>
+                           ))}
+                        </select>
+                     </div>
+                     <div className="form-group">
+                        <label>Valor Base (R$)</label>
+                        <input 
+                           type="number" 
+                           step="0.01" 
+                           required 
+                           value={editFormData.base_price} 
+                           onChange={e => setEditFormData({...editFormData, base_price: e.target.value})} 
+                        />
+                     </div>
+                     <div className="form-group">
+                        <label>Status</label>
+                        <select 
+                           required 
+                           value={editFormData.status} 
+                           onChange={e => setEditFormData({...editFormData, status: e.target.value})} 
+                           style={{ color: '#000' }}
+                        >
+                           <option value="available">Disponível</option>
+                           <option value="sold">Vendido</option>
+                           <option value="reserved">Reservado</option>
+                           <option value="unavailable">Indisponível</option>
+                        </select>
+                     </div>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <input 
+                           type="checkbox" 
+                           id="editAllowsDiscount" 
+                           checked={editFormData.allows_discount} 
+                           onChange={e => setEditFormData({...editFormData, allows_discount: e.target.checked})} 
+                           style={{ width: '18px', height: '18px' }}
+                        />
+                        <label htmlFor="editAllowsDiscount" style={{ fontSize: '14px', color: '#fff', textTransform: 'none' }}>Permite Desconto para Sócios</label>
+                     </div>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <input 
+                           type="checkbox" 
+                           id="editControlsStock" 
+                           checked={editFormData.controls_stock} 
+                           onChange={e => setEditFormData({...editFormData, controls_stock: e.target.checked})} 
+                           style={{ width: '18px', height: '18px' }}
+                        />
+                        <label htmlFor="editControlsStock" style={{ fontSize: '14px', color: '#fff', textTransform: 'none' }}>Controla Estoque?</label>
+                     </div>
+                     
+                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                        <button type="button" className="btn-minimal" onClick={() => setShowEditModal(false)}>Cancelar</button>
+                        <button type="submit" className="btn btn-primary" disabled={saving}>
+                           {saving ? 'Salvando...' : 'Salvar Alterações'}
                         </button>
                      </div>
                   </form>

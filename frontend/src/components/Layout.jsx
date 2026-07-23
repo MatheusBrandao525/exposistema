@@ -24,7 +24,7 @@ export const Layout = () => {
     { name: 'Espaços', icon: <Image size={18} strokeWidth={2.5} />, path: '/spaces', roles: ['admin'] },
     { name: 'Financeiro', icon: <DollarSign size={18} strokeWidth={2.5} />, path: '/financial', roles: ['admin', 'treasurer'] },
     { name: 'Vendedores', icon: <Users size={18} strokeWidth={2.5} />, path: '/sellers', roles: ['admin'] },
-    { name: 'Clientes', icon: <Users size={18} strokeWidth={2.5} />, path: '/customers', roles: ['admin'] },
+    { name: 'Clientes', icon: <Users size={18} strokeWidth={2.5} />, path: '/customers', roles: ['admin', 'treasurer'] },
     { name: 'Configurações', icon: <Settings size={18} strokeWidth={2.5} />, path: '/settings', roles: ['admin'] },
   ].filter(item => item.roles.includes(userRole))
 

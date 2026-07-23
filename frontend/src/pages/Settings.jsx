@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Palette, Globe, Shield, Save, CloudLightning, RefreshCw, Type, Calendar, Image as ImageIcon, ChevronRight } from 'lucide-react'
+import { Settings as SettingsIcon, Palette, Globe, Shield, Save, CloudLightning, RefreshCw, Type, Calendar, Image as ImageIcon, ChevronRight, CreditCard } from 'lucide-react'
 import api from '../api'
 
 const Settings = () => {
@@ -11,13 +11,23 @@ const Settings = () => {
     event_date: '',
     maintenance_mode: '0'
   })
+  const [cardFees, setCardFees] = useState([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     api.get('/settings')
       .then(res => res.json())
       .then(data => {
-        if (data && Object.keys(data).length > 0) setSettings(data)
+        if (data && Object.keys(data).length > 0) {
+          setSettings(data)
+          if (data.card_fees) {
+            try {
+              setCardFees(JSON.parse(data.card_fees))
+            } catch (e) {
+              setCardFees([])
+            }
+          }
+        }
       })
   }, [])
 
@@ -25,7 +35,11 @@ const Settings = () => {
     e.preventDefault()
     setSaving(true)
     try {
-      await api.post('/settings', settings)
+      const updatedSettings = {
+        ...settings,
+        card_fees: JSON.stringify(cardFees)
+      }
+      await api.post('/settings', updatedSettings)
       alert('Configurações aplicadas com sucesso! 🎉')
     } catch (err) {
       alert('Houve um erro técnico ao processar sua solicitação.')
@@ -37,6 +51,7 @@ const Settings = () => {
   const tabs = [
     { id: 'branding', label: 'Marca e Identidade', sub: 'Cores, logo e nome do evento', icon: <Palette size={22} /> },
     { id: 'general', label: 'Informações do Evento', sub: 'Datas, locais e cronogramas', icon: <Globe size={22} /> },
+    { id: 'card_rates', label: 'Taxas de Cartão', sub: 'Bandeiras de cartão e taxas', icon: <CreditCard size={22} /> },
     { id: 'system', label: 'Segurança e Dados', sub: 'Manutenção e backup de sistema', icon: <Shield size={22} /> }
   ]
 
@@ -180,6 +195,105 @@ const Settings = () => {
                            onChange={e => setSettings({...settings, event_location: e.target.value})}
                            placeholder="Ex: Pavilhão B, Rodovia RS-118, KM 45, Rio Grande do Sul"
                          ></textarea>
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {activeTab === 'card_rates' && (
+                <div className="hq-section">
+                   <div className="hq-section-head mb-60">
+                      <h2 className="text-4xl font-black mb-12">Taxas de Cartão</h2>
+                      <p className="color-dim text-lg">Gerencie as bandeiras aceitas e a taxa percentual cobrada em vendas no crédito.</p>
+                   </div>
+                   
+                   <div className="flex-column gap-40">
+                      <div className="glass p-40 border-subtle rounded-20 flex gap-20 align-center hq-row flex-wrap" style={{ background: 'rgba(255,255,255,0.01)' }}>
+                         <div className="flex-1 min-w-200">
+                            <label className="hq-label">Bandeira do Cartão</label>
+                            <div className="hq-input-wrapper">
+                               <input 
+                                 type="text" 
+                                 className="hq-input-field" 
+                                 placeholder="Ex: Visa, Mastercard, Elo..." 
+                                 id="new-brand-name"
+                               />
+                            </div>
+                         </div>
+                         <div style={{ width: '180px' }}>
+                            <label className="hq-label">Taxa (%)</label>
+                            <div className="hq-input-wrapper">
+                               <input 
+                                 type="number" 
+                                 step="0.01" 
+                                 className="hq-input-field" 
+                                 placeholder="Ex: 2.50" 
+                                 id="new-brand-rate"
+                               />
+                            </div>
+                         </div>
+                         <div className="flex align-end mt-24">
+                            <button 
+                              type="button" 
+                              className="btn btn-primary font-bold px-32 py-18 rounded-16 hq-save-btn"
+                              style={{ padding: '16px 32px', height: '62px' }}
+                              onClick={() => {
+                                 const nameInput = document.getElementById('new-brand-name');
+                                 const rateInput = document.getElementById('new-brand-rate');
+                                 const name = nameInput.value.trim();
+                                 const rate = parseFloat(rateInput.value);
+                                 if (!name) return alert('Por favor, informe a bandeira do cartão.');
+                                 if (isNaN(rate) || rate < 0) return alert('Por favor, informe uma taxa válida.');
+                                 
+                                 if (cardFees.some(f => f.brand.toLowerCase() === name.toLowerCase())) {
+                                    return alert('Esta bandeira já está cadastrada.');
+                                 }
+                                 
+                                 setCardFees([...cardFees, { brand: name, rate: rate }]);
+                                 nameInput.value = '';
+                                 rateInput.value = '';
+                              }}
+                            >
+                              Adicionar
+                            </button>
+                         </div>
+                      </div>
+
+                      <div className="glass overflow-hidden rounded-20 border-subtle">
+                         <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
+                            <thead>
+                               <tr className="border-bottom" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                  <th style={{ padding: '20px', fontSize: '12px', fontWeight: '900', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Bandeira</th>
+                                  <th style={{ padding: '20px', fontSize: '12px', fontWeight: '900', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Taxa Cobrada</th>
+                                  <th className="text-right pr-20" style={{ padding: '20px', fontSize: '12px', fontWeight: '900', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Ações</th>
+                               </tr>
+                            </thead>
+                            <tbody>
+                               {cardFees.map((fee, index) => (
+                                  <tr key={index} className="border-bottom hover-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                     <td style={{ padding: '20px', fontWeight: '700', color: '#fff' }}>{fee.brand}</td>
+                                     <td style={{ padding: '20px', fontWeight: '700', color: 'var(--primary)', fontSize: '16px' }}>{fee.rate.toFixed(2)}%</td>
+                                     <td className="text-right pr-20" style={{ padding: '20px' }}>
+                                        <button 
+                                          type="button" 
+                                          className="btn btn-secondary py-8 px-16 border rounded-8 text-xs color-rose" 
+                                          style={{ color: '#f43f5e', borderColor: 'rgba(244, 63, 94, 0.2)', cursor: 'pointer', background: 'transparent' }}
+                                          onClick={() => {
+                                             setCardFees(cardFees.filter((_, idx) => idx !== index));
+                                          }}
+                                        >
+                                           Excluir
+                                        </button>
+                                     </td>
+                                  </tr>
+                               ))}
+                               {cardFees.length === 0 && (
+                                  <tr>
+                                     <td colSpan={3} className="text-center py-40 color-muted italic">Nenhuma bandeira de cartão cadastrada.</td>
+                                  </tr>
+                               )}
+                            </tbody>
+                         </table>
                       </div>
                    </div>
                 </div>

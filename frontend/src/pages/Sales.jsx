@@ -273,6 +273,7 @@ const Sales = () => {
               <img src="${window.location.origin}/logo.png" style="height: 80px; width: auto;" />
               <div>
                 <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXPOVALE APRF</h1>
+                <div style="font-size: 11px; font-weight: 700; color: #666; margin-top: 2px;">CNPJ: 04.710.150/0001-40</div>
                 <p style="margin: 5px 0 0; font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase;">Comprovante de Operação Financeira</p>
               </div>
             </div>
@@ -606,19 +607,34 @@ const Sales = () => {
                             <span key={t} className="tag-premium-sm">{t}</span>
                          ))}
                       </div>
-                   </div>
-                </div>
-
-                <div className="finance-sheet glass">
-                   <div className="sheet-row">
-                      <span>Valor Original Transacionado</span>
-                      <strong className="text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedSale.total_price)}</strong>
-                   </div>
-                   <div className="sheet-row no-border">
-                      <span>Gateway de Pagamento</span>
-                      <div className="method-display">
-                         {getPaymentIcon(selectedSale.payment_method)}
-                         <strong>{selectedSale.payment_method || 'PIX'}</strong>
+                      <div className="finance-sheet glass">
+                        <div className="sheet-row">
+                           <span>Valor Original Transacionado</span>
+                           <strong className="text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedSale.total_price)}</strong>
+                        </div>
+                        {selectedSale.payment_method === 'credito' && selectedSale.card_brand && (
+                           <>
+                              <div className="sheet-row">
+                                 <span>Bandeira / Taxa (%)</span>
+                                 <strong className="text-white">{selectedSale.card_brand} ({parseFloat(selectedSale.card_fee_rate || 0).toFixed(2)}%)</strong>
+                              </div>
+                              <div className="sheet-row" style={{ color: '#ef4444' }}>
+                                 <span>Desconto de Taxa de Cartão</span>
+                                 <strong style={{ color: '#ef4444' }}>- {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedSale.card_fee_amount || 0)}</strong>
+                              </div>
+                              <div className="sheet-row" style={{ color: '#10b981', fontWeight: '800' }}>
+                                 <span>Valor Líquido Recebido</span>
+                                 <strong style={{ color: '#10b981' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedSale.total_price - (selectedSale.card_fee_amount || 0))}</strong>
+                              </div>
+                           </>
+                        )}
+                        <div className="sheet-row no-border">
+                           <span>Gateway de Pagamento</span>
+                           <div className="method-display">
+                              {getPaymentIcon(selectedSale.payment_method)}
+                              <strong>{selectedSale.payment_method || 'PIX'}</strong>
+                           </div>
+                        </div>
                       </div>
                    </div>
                 </div>

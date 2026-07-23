@@ -7,7 +7,7 @@ const Customers = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingClient, setEditingClient] = useState(null)
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', company: '', is_partner: false })
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', company: '', is_partner: false, is_company: false, document: '' })
 
   useEffect(() => {
     fetchClients()
@@ -27,11 +27,13 @@ const Customers = () => {
         email: client.email || '', 
         phone: client.phone || '', 
         company: client.company || '',
-        is_partner: !!client.is_partner
+        is_partner: !!client.is_partner,
+        is_company: !!client.is_company,
+        document: client.document || ''
       })
     } else {
       setEditingClient(null)
-      setFormData({ name: '', email: '', phone: '', company: '', is_partner: false })
+      setFormData({ name: '', email: '', phone: '', company: '', is_partner: false, is_company: false, document: '' })
     }
     setShowModal(true)
   }
@@ -109,9 +111,16 @@ const Customers = () => {
                   </div>
                 </td>
                 <td>
-                  <div className="flex align-center gap-8">
-                    <Building size={14} className="color-muted" />
-                    <span className="text-sm font-medium">{client.company || 'Pessoa Física'}</span>
+                  <div className="flex-column gap-4">
+                    <div className="flex align-center gap-8">
+                      <Building size={14} className="color-muted" />
+                      <span className="text-sm font-medium">
+                        {(client.is_company || client.company) ? (client.company || 'Empresa') : 'Pessoa Física'}
+                      </span>
+                    </div>
+                    {client.document && (
+                      <span className="text-xs color-muted font-mono">{client.document}</span>
+                    )}
                   </div>
                 </td>
                 <td>
@@ -146,22 +155,59 @@ const Customers = () => {
             </div>
             <form onSubmit={handleSubmit} className="flex-column gap-20">
               <div className="form-group">
-                <label>Nome Completo</label>
+                <label>Nome Completo / Razão Social</label>
                 <input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
               </div>
-              <div className="form-row flex gap-20">
-                <div className="form-group flex-1">
-                  <label>Empresa</label>
-                  <input value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} />
+              <div className="form-group">
+                <label>Tipo de Cliente</label>
+                <div className="flex gap-24 mt-8">
+                  <label className="flex align-center gap-8 cursor-pointer text-sm" style={{ color: 'white' }}>
+                    <input 
+                      type="radio" 
+                      name="is_company" 
+                      checked={!formData.is_company} 
+                      onChange={() => setFormData({...formData, is_company: false, company: ''})} 
+                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                    Pessoa Física (CPF)
+                  </label>
+                  <label className="flex align-center gap-8 cursor-pointer text-sm" style={{ color: 'white' }}>
+                    <input 
+                      type="radio" 
+                      name="is_company" 
+                      checked={formData.is_company} 
+                      onChange={() => setFormData({...formData, is_company: true})} 
+                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                    Pessoa Jurídica (CNPJ)
+                  </label>
                 </div>
+              </div>
+              <div className="form-row flex gap-20">
+                {formData.is_company && (
+                  <div className="form-group flex-1 animate-fade">
+                    <label>Nome da Empresa (Nome Fantasia)</label>
+                    <input value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} required={formData.is_company} />
+                  </div>
+                )}
+                <div className="form-group flex-1">
+                  <label>{formData.is_company ? 'CNPJ' : 'CPF'}</label>
+                  <input 
+                    placeholder={formData.is_company ? '00.000.000/0000-00' : '000.000.000-00'} 
+                    value={formData.document} 
+                    onChange={e => setFormData({...formData, document: e.target.value})} 
+                  />
+                </div>
+              </div>
+              <div className="form-row flex gap-20">
                 <div className="form-group flex-1">
                   <label>Telefone</label>
                   <input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                 </div>
-              </div>
-              <div className="form-group">
-                <label>E-mail</label>
-                <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                <div className="form-group flex-1">
+                  <label>E-mail</label>
+                  <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                </div>
               </div>
               <div className="form-group flex align-center gap-12 mt-4">
                 <input 
@@ -185,8 +231,32 @@ const Customers = () => {
       <style>{`
         .customers-page { width: 100%; max-width: 1400px; }
         .avatar-circle { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); }
-        .hover-error:hover { color: var(--error) !important; background: rgba(244, 63, 94, 0.1) !important; border-color: var(--error) !important; }
-        
+        .action-button {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--border);
+          color: var(--text-muted);
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .action-button:hover {
+          background: rgba(251, 191, 36, 0.1);
+          border-color: var(--primary);
+          color: var(--primary);
+          box-shadow: 0 0 12px var(--primary-glow);
+          transform: translateY(-2px);
+        }
+        .action-button.hover-error:hover {
+          background: rgba(244, 63, 94, 0.1);
+          border-color: var(--error);
+          color: var(--error);
+          box-shadow: 0 0 12px rgba(244, 63, 94, 0.4);
+          transform: translateY(-2px);
+        }
         .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
         .modal-content { width: 100%; max-width: 580px; padding: 48px; border-radius: 28px; }
         .close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; }

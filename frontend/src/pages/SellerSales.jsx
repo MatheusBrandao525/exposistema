@@ -20,8 +20,29 @@ const SellerSales = () => {
   const [selectedStatusToUpdate, setSelectedStatusToUpdate] = useState({})
   const [observations, setObservations] = useState('')
   const [showNewClientForm, setShowNewClientForm] = useState(false)
-  const [newClient, setNewClient] = useState({ name: '', email: '', company: '', phone: '', is_partner: false })
+  const [newClient, setNewClient] = useState({ name: '', email: '', company: '', phone: '', is_partner: false, is_company: false, document: '' })
   const [lastSale, setLastSale] = useState(null)
+  const [clientFilter, setClientFilter] = useState('all') // 'all' or 'partners'
+  const [availableBrands, setAvailableBrands] = useState([])
+  const [selectedBrand, setSelectedBrand] = useState('')
+
+  useEffect(() => {
+    api.get('/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.card_fees) {
+          try {
+            const parsed = JSON.parse(data.card_fees)
+            setAvailableBrands(parsed || [])
+            if (parsed && parsed.length > 0) {
+               setSelectedBrand(parsed[0].brand)
+            }
+          } catch(e) {
+            setAvailableBrands([])
+          }
+        }
+      })
+  }, [])
 
   useEffect(() => {
     fetchList()
@@ -132,7 +153,7 @@ const SellerSales = () => {
         setSelectedClient({ ...newClient, id: data.id })
         setStep(2)
         setShowNewClientForm(false)
-        setNewClient({ name: '', email: '', company: '', phone: '', is_partner: false })
+        setNewClient({ name: '', email: '', company: '', phone: '', is_partner: false, is_company: false, document: '' })
         setSearchTerm('')
       } else {
         alert('Erro ao criar cliente')
@@ -144,12 +165,20 @@ const SellerSales = () => {
     }
   }
 
-  const filteredClients = clients
+  const filteredClients = clients.filter(c => {
+    if (clientFilter === 'partners') {
+      return c.is_partner === 1 || c.is_partner === true || c.is_partner === '1';
+    }
+    return true;
+  })
   const filteredProducts = products 
 
 
   const addToCart = (product) => {
-    if (!cart.find(item => item.id === product.id)) {
+    const existing = cart.find(item => item.id === product.id)
+    if (existing) {
+      setCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
+    } else {
       setCart([...cart, { ...product, quantity: 1 }])
     }
     setSearchTerm('')
@@ -186,6 +215,7 @@ const SellerSales = () => {
       payment_method: paymentMethod,
       status: saleStatus,
       observations: observations,
+      card_brand: paymentMethod === 'credito' ? selectedBrand : null,
       items: cart.map(item => ({ id: item.id, price: getItemPrice(item), quantity: item.quantity }))
     }
 
@@ -299,6 +329,7 @@ const SellerSales = () => {
               <img src="${window.location.origin}/logo.png" style="width: 60px; height: 60px; object-fit: contain; border-radius: 8px;" alt="Logo" />
               <div>
                 <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXPOVALE APRF</h1>
+                <div style="font-size: 11px; font-weight: 700; color: #666; margin-top: 2px;">CNPJ: 04.710.150/0001-40</div>
                 <p style="margin: 5px 0 0; font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase;">Comprovante de Operação Financeira</p>
               </div>
             </div>
@@ -494,10 +525,38 @@ Obrigado por fechar negócio conosco!`;
                   <button className="btn-text text-sm color-muted" onClick={() => setShowNewClientForm(false)}>Voltar</button>
                 </div>
                 <form onSubmit={handleCreateClient} className="flex-column gap-16">
-                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Nome Completo *" value={newClient.name} onChange={e => setNewClient({...newClient, name: e.target.value})} required />
-                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Email (Opcional)" type="email" value={newClient.email} onChange={e => setNewClient({...newClient, email: e.target.value})} />
+                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Nome Completo / Razão Social *" value={newClient.name} onChange={e => setNewClient({...newClient, name: e.target.value})} required />
+                  
+                  <div className="flex gap-16 px-8 text-sm">
+                    <label className="flex align-center gap-8 cursor-pointer text-white">
+                      <input 
+                        type="radio" 
+                        name="is_company_mobile" 
+                        checked={!newClient.is_company} 
+                        onChange={() => setNewClient({...newClient, is_company: false, company: ''})} 
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                      Pessoa Física
+                    </label>
+                    <label className="flex align-center gap-8 cursor-pointer text-white">
+                      <input 
+                        type="radio" 
+                        name="is_company_mobile" 
+                        checked={newClient.is_company} 
+                        onChange={() => setNewClient({...newClient, is_company: true})} 
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                      Pessoa Jurídica
+                    </label>
+                  </div>
+
+                  {newClient.is_company && (
+                    <input className="input-group-mobile glass text-white w-full animate-fade" style={{ padding: '16px' }} placeholder="Nome Fantasia / Empresa *" value={newClient.company} onChange={e => setNewClient({...newClient, company: e.target.value})} required={newClient.is_company} />
+                  )}
+                  
+                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder={newClient.is_company ? "CNPJ" : "CPF"} value={newClient.document} onChange={e => setNewClient({...newClient, document: e.target.value})} />
                   <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Telefone / WhatsApp (Opcional)" value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} />
-                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Empresa / CNPJ (Opcional)" value={newClient.company} onChange={e => setNewClient({...newClient, company: e.target.value})} />
+                  <input className="input-group-mobile glass text-white w-full" style={{ padding: '16px' }} placeholder="Email (Opcional)" type="email" value={newClient.email} onChange={e => setNewClient({...newClient, email: e.target.value})} />
                   
                   <div className="flex align-center gap-12 mt-8 px-8">
                     <input 
@@ -528,13 +587,33 @@ Obrigado por fechar negócio conosco!`;
                   />
                 </div>
 
+                <div className="flex gap-12 mt-16 px-4">
+                  <button 
+                    type="button" 
+                    className={`btn-filter-terminal ${clientFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => setClientFilter('all')}
+                  >
+                    Todos
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`btn-filter-terminal ${clientFilter === 'partners' ? 'active' : ''}`}
+                    onClick={() => setClientFilter('partners')}
+                  >
+                    Sócios
+                  </button>
+                </div>
+
                 <div className="list-container mt-20">
                   {filteredClients.length > 0 ? filteredClients.map(client => (
                     <div key={client.id} className="glass list-item animate-slideUp" onClick={() => { setSelectedClient(client); setStep(2); setSearchTerm('') }}>
                       <div className="item-icon"><User size={20} className="color-primary" /></div>
                       <div className="item-info">
                         <strong>{client.name}</strong>
-                        <span>{client.company || 'Pessoa Física'}</span>
+                        <span>
+                          {(client.is_company || client.company) ? (client.company || 'Empresa') : 'Pessoa Física'}
+                          {client.document ? ` • ${client.document}` : ''}
+                        </span>
                       </div>
                       <ChevronRight size={20} className="color-muted opacity-50" />
                     </div>
@@ -571,6 +650,49 @@ Obrigado por fechar negócio conosco!`;
               <div className="edit-badge">Alterar</div>
             </div>
 
+            {cart.length > 0 && (
+              <div className="glass p-16 mb-20" style={{ borderRadius: '20px', border: '1px dashed rgba(251, 191, 36, 0.2)', background: 'rgba(251, 191, 36, 0.02)' }}>
+                <span className="text-xs uppercase font-black color-primary tracking-widest mb-12 block">Itens no Carrinho</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {cart.map(item => (
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '10px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>{item.name}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {item.quantity} {item.quantity === 1 ? 'unidade' : 'unidades'} • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getItemPrice(item) * item.quantity)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            if (item.quantity > 1) {
+                              setCart(cart.map(i => i.id === item.id ? { ...i, quantity: i.quantity - 1 } : i))
+                            } else {
+                              removeFromCart(item.id)
+                            }
+                          }}
+                          style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
+                        >
+                          -
+                        </button>
+                        <strong style={{ fontSize: '14px', color: '#fff', minWidth: '20px', textAlign: 'center' }}>{item.quantity}</strong>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setCart(cart.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))
+                          }}
+                          style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className={`input-group-mobile glass ${searchTerm ? 'focused' : ''}`}>
               <Search size={20} className="color-muted" />
               <input 
@@ -581,16 +703,25 @@ Obrigado por fechar negócio conosco!`;
             </div>
 
             <div className="list-container mt-20">
-              {filteredProducts.map(product => (
-                <div key={product.id} className="glass list-item animate-slideUp" onClick={() => addToCart(product)}>
-                  <div className="item-icon"><Package size={20} className="color-accent" /></div>
-                  <div className="item-info">
-                    <strong>{product.name}</strong>
-                    <span className="price">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.base_price)}</span>
+              {filteredProducts.map(product => {
+                const inCart = cart.find(item => item.id === product.id)
+                return (
+                  <div key={product.id} className="glass list-item animate-slideUp" onClick={() => addToCart(product)}>
+                    <div className="item-icon"><Package size={20} className="color-accent" /></div>
+                    <div className="item-info">
+                      <strong>{product.name}</strong>
+                      <span className="price">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.base_price)}</span>
+                    </div>
+                    {inCart ? (
+                      <div className="plus-btn-circle" style={{ background: 'var(--primary)', color: '#000', fontWeight: '800', fontSize: '12px' }}>
+                        {inCart.quantity}x
+                      </div>
+                    ) : (
+                      <div className="plus-btn-circle"><Plus size={18} /></div>
+                    )}
                   </div>
-                  <div className="plus-btn-circle"><Plus size={18} /></div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </motion.div>
         )}
@@ -611,14 +742,26 @@ Obrigado por fechar negócio conosco!`;
                       <strong className="text-xl block text-white mb-8 pr-12">{selectedClient?.name}</strong>
                       <div className="flex-column gap-8 text-xs color-muted">
                         <div className="flex align-center gap-6">
-                           <span className="text-white opacity-40 font-bold min-w-60">Empresa:</span>
-                           <span className="text-white opacity-80">{selectedClient?.company || 'Pessoa Física'}</span>
+                           <span className="text-white opacity-40 font-bold min-w-60">
+                             {selectedClient?.is_company || selectedClient?.company ? 'Empresa:' : 'Tipo:'}
+                           </span>
+                           <span className="text-white opacity-80">
+                             {selectedClient?.is_company || selectedClient?.company ? (selectedClient?.company || 'Empresa') : 'Pessoa Física'}
+                           </span>
                         </div>
+                        {selectedClient?.document && (
+                          <div className="flex align-center gap-6">
+                             <span className="text-white opacity-40 font-bold min-w-60">
+                               {selectedClient?.is_company || selectedClient?.company ? 'CNPJ:' : 'CPF:'}
+                             </span>
+                             <span className="text-white opacity-80 font-mono">{selectedClient?.document}</span>
+                          </div>
+                        )}
                         <div className="flex align-center gap-6">
                            <span className="text-white opacity-40 font-bold min-w-60">Contato:</span>
-                           <span className="text-white opacity-80">{selectedClient?.email}</span>
+                           <span className="text-white opacity-80">{selectedClient?.email || selectedClient?.phone || 'Não informado'}</span>
                         </div>
-                        {selectedClient?.is_partner && (
+                        {!!selectedClient?.is_partner && (
                           <div className="flex align-center gap-6 mt-4">
                              <div className="badge-partner">SÓCIO ATIVO - 20% OFF</div>
                           </div>
@@ -633,19 +776,26 @@ Obrigado por fechar negócio conosco!`;
                     {cart.map(item => (
                       <div key={item.id} className="receipt-item py-24 flex justify-between align-start">
                         <div className="info flex-1 pr-20">
-                          <strong className="block text-lg text-white mb-6 leading-tight">{item.name}</strong>
+                          <strong className="block text-lg text-white mb-6 leading-tight">
+                            {item.name} {item.quantity > 1 && <span style={{ color: 'var(--primary)' }}>({item.quantity}x)</span>}
+                          </strong>
                           <span className="text-xs color-muted block font-medium">Serviço de Mídia & Publicidade</span>
                         </div>
                         <div className="flex-column align-end gap-16">
                            <div className="flex-column align-end">
-                              {selectedClient?.is_partner && item.allows_discount && (
+                              {!!(selectedClient?.is_partner && item.allows_discount) && (
                                 <span className="text-xs color-muted line-through opacity-50">
-                                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.base_price)}
+                                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.base_price * item.quantity)}
                                 </span>
                               )}
                               <strong className="text-lg color-primary font-black">
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getItemPrice(item))}
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getItemPrice(item) * item.quantity)}
                               </strong>
+                              {item.quantity > 1 && (
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                                   {item.quantity}x {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getItemPrice(item))}
+                                </span>
+                              )}
                            </div>
                            <button className="remove-icon-btn flex align-center gap-8" onClick={() => removeFromCart(item.id)}>
                               <Trash2 size={16}/> <span className="text-tiny font-black">REMOVER</span>
@@ -683,6 +833,25 @@ Obrigado por fechar negócio conosco!`;
                            <span>2 FORMAS</span>
                         </div>
                      </div>
+
+                     {paymentMethod === 'credito' && (
+                        <div className="observation-box mt-20 animate-fade">
+                           <span className="text-xs uppercase font-black color-muted mb-8 block tracking-widest text-center">Bandeira do Cartão</span>
+                           <select 
+                             className="input-group-mobile glass text-white w-full"
+                             style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '16px', color: '#fff', outline: 'none' }}
+                             value={selectedBrand}
+                             onChange={e => setSelectedBrand(e.target.value)}
+                           >
+                             {availableBrands.map((b, idx) => (
+                               <option key={idx} value={b.brand} style={{ background: '#000', color: '#fff' }}>{b.brand}</option>
+                             ))}
+                             {availableBrands.length === 0 && (
+                               <option value="" style={{ background: '#000', color: '#fff' }}>Nenhuma bandeira cadastrada</option>
+                             )}
+                           </select>
+                        </div>
+                     )}
 
                      <div className="observation-box mt-20">
                         <span className="text-xs uppercase font-black color-muted mb-8 block tracking-widest text-center">Status do Pagamento</span>
@@ -870,9 +1039,25 @@ Obrigado por fechar negócio conosco!`;
             {step === 2 ? (
               <button className="btn btn-primary" onClick={() => setStep(3)}>Revisar</button>
             ) : (
-              <button className="btn btn-primary" onClick={handleFinish} disabled={loading || (paymentMethod === 'misto' && !observations)}>
-                {loading ? 'Processando...' : 'Finalizar Venda'}
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-ghost glass" 
+                  onClick={() => setStep(2)}
+                  style={{ padding: '12px 14px', fontSize: '13px', fontWeight: '800', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'rgba(251, 191, 36, 0.08)' }}
+                >
+                  + ITENS
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  onClick={handleFinish} 
+                  disabled={loading || (paymentMethod === 'misto' && !observations)}
+                  style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '800' }}
+                >
+                  {loading ? 'Processando...' : 'FINALIZAR'}
+                </button>
+              </div>
             ) }
           </motion.div>
         )}
@@ -902,6 +1087,29 @@ Obrigado por fechar negócio conosco!`;
         .logout-btn-premium:active { transform: scale(0.9); }
         .history-btn-premium { height: 44px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; transition: 0.3s; cursor: pointer; padding: 0 16px; }
         .history-btn-premium.active { background: var(--primary); color: #000; border: none; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.2); }
+        .btn-filter-terminal {
+          flex: 1;
+          height: 40px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.06);
+          color: var(--text-muted);
+          font-size: 13px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .btn-filter-terminal.active {
+          background: var(--primary);
+          color: #000;
+          border-color: var(--primary);
+          box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
+        }
         .user-badge-mini { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
         .user-badge-mini .avatar { width: 28px; height: 28px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #000; font-size: 12px; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3); }
 

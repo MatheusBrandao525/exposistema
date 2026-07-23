@@ -21,30 +21,34 @@ class ClientController extends Controller
 
     public function store(): void
     {
-        \App\Core\Auth::checkRole(['admin', 'seller']);
+        \App\Core\Auth::checkRole(['admin', 'seller', 'treasurer']);
         $data = $this->getPostData();
-        $sql = "INSERT INTO clients (name, phone, company, email, is_partner) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO clients (name, phone, company, email, is_partner, is_company, document) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $this->db->prepare($sql)->execute([
             $data['name'], 
             $data['phone'] ?? null, 
             $data['company'] ?? null, 
             $data['email'] ?? null,
-            $data['is_partner'] ?? false
+            $data['is_partner'] ?? false,
+            isset($data['is_company']) ? (int)$data['is_company'] : 0,
+            $data['document'] ?? null
         ]);
         $this->jsonResponse(['success' => true, 'id' => $this->db->lastInsertId()]);
     }
 
     public function update(int $id): void
     {
-        \App\Core\Auth::checkRole(['admin']);
+        \App\Core\Auth::checkRole(['admin', 'treasurer']);
         $data = $this->getPostData();
-        $sql = "UPDATE clients SET name = ?, phone = ?, company = ?, email = ?, is_partner = ? WHERE id = ?";
+        $sql = "UPDATE clients SET name = ?, phone = ?, company = ?, email = ?, is_partner = ?, is_company = ?, document = ? WHERE id = ?";
         $this->db->prepare($sql)->execute([
             $data['name'], 
             $data['phone'], 
             $data['company'], 
             $data['email'], 
             $data['is_partner'] ?? false,
+            isset($data['is_company']) ? (int)$data['is_company'] : 0,
+            $data['document'] ?? null,
             $id
         ]);
         $this->jsonResponse(['success' => true]);

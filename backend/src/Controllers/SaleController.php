@@ -54,7 +54,31 @@ class SaleController extends Controller
         try {
             $status = in_array($data['status'] ?? '', ['paid', 'pending']) ? $data['status'] : 'pending';
             
-            $sql = "INSERT INTO sales (event_id, client_id, user_id, negotiated_price, status, payment_method, observations, purchase_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $cardBrand = null;
+            $cardFeeRate = 0.00;
+            $cardFeeAmount = 0.00;
+            
+            $paymentMethod = $data['payment_method'] ?? 'pix';
+            if ($paymentMethod === 'credito' && !empty($data['card_brand'])) {
+                $cardBrand = $data['card_brand'];
+                $fee_stmt = $this->db->prepare("SELECT value FROM settings WHERE `key` = 'card_fees'");
+                $fee_stmt->execute();
+                $cardFeesJson = $fee_stmt->fetchColumn();
+                if ($cardFeesJson) {
+                    $feesArray = json_decode($cardFeesJson, true);
+                    if (is_array($feesArray)) {
+                        foreach ($feesArray as $fee) {
+                            if (strcasecmp($fee['brand'], $cardBrand) === 0) {
+                                $cardFeeRate = floatval($fee['rate']);
+                                break;
+                            }
+                        }
+                    }
+                }
+                $cardFeeAmount = floatval($data['total_price']) * ($cardFeeRate / 100);
+            }
+            
+            $sql = "INSERT INTO sales (event_id, client_id, user_id, negotiated_price, status, payment_method, observations, purchase_date, card_brand, card_fee_rate, card_fee_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $data['event_id'] ?? 1,
@@ -62,9 +86,12 @@ class SaleController extends Controller
                 $data['user_id'] ?? 1,
                 $data['total_price'],
                 $status,
-                $data['payment_method'] ?? 'pix',
+                $paymentMethod,
                 $data['observations'] ?? null,
-                date('Y-m-d')
+                date('Y-m-d'),
+                $cardBrand,
+                $cardFeeRate,
+                $cardFeeAmount
             ]);
             $sale_id = $this->db->lastInsertId();
 
@@ -94,6 +121,11 @@ class SaleController extends Controller
         $stmt->execute([$id]);
         $sale = $stmt->fetch();
         if ($sale) {
+            $user = \App\Core\Auth::getUser();
+            if ($user && $user['role'] !== 'admin' && $user['role'] !== 'treasurer') {
+                unset($sale['card_fee_rate']);
+                unset($sale['card_fee_amount']);
+            }
             $item_stmt = $this->db->prepare("SELECT si.*, asp.name as item_name FROM sale_items si JOIN ad_spaces asp ON si.ad_space_id = asp.id WHERE si.sale_id = ?");
             $item_stmt->execute([$id]);
             $sale['items'] = $item_stmt->fetchAll();
@@ -127,7 +159,10 @@ class SaleController extends Controller
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$user['id']]);
         $sales = $stmt->fetchAll();
-        
+        foreach ($sales as &$sale) {
+            unset($sale['card_fee_rate']);
+            unset($sale['card_fee_amount']);
+        }
         $this->jsonResponse($sales);
     }
 
@@ -146,7 +181,7 @@ class SaleController extends Controller
             $sale = $stmt->fetch();
             if (!$sale) throw new Exception("Venda não encontrada");
 
-            if ($sale['user_id'] != $user['id']) throw new Exception("Acesso negado");
+            if ($user['role'] !== 'admin' && $user['role'] !== 'treasurer' && $sale['user_id'] != $user['id']) throw new Exception("Acesso negado");
 
             $statusMap = ['pendente' => 'pending', 'pago' => 'paid', 'expirado' => 'expired', 'recusado' => 'refused', 'cancelado' => 'cancelled', 'cancelada' => 'cancelled'];
             $finalStatus = $statusMap[$status] ?? $status;
