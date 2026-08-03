@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index(): void
     {
         \App\Core\Auth::checkRole(['admin', 'treasurer']);
-        $stmt = $this->db->query("SELECT id, name, email, role, seller_function, created_at FROM users ORDER BY name ASC");
+        $stmt = $this->db->query("SELECT id, name, email, username, role, seller_function, created_at FROM users ORDER BY name ASC");
         $this->jsonResponse($stmt->fetchAll());
     }
 
@@ -27,11 +27,12 @@ class UserController extends Controller
         \App\Core\Logger::log("Tentativa de criar usuário", $data);
         
         try {
-            $sql = "INSERT INTO users (name, email, password, role, seller_function) VALUES (?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO users (name, email, username, password, role, seller_function) VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $data['name'], 
                 $data['email'], 
+                $data['username'] ?? null,
                 password_hash($data['password'], PASSWORD_DEFAULT), 
                 $data['role'] ?? 'seller',
                 $data['seller_function'] ?? null
@@ -40,7 +41,11 @@ class UserController extends Controller
         } catch (\PDOException $e) {
             $error = $e->getMessage();
             if (strpos($error, 'Duplicate entry') !== false) {
-                $error = 'Este e-mail já está sendo utilizado por outro colaborador.';
+                if (strpos($error, 'username') !== false) {
+                    $error = 'Este nome de usuário já está sendo utilizado por outro colaborador.';
+                } else {
+                    $error = 'Este e-mail já está sendo utilizado por outro colaborador.';
+                }
             }
             $this->jsonResponse(['success' => false, 'error' => $error], 400);
         } catch (\Exception $e) {
@@ -55,20 +60,22 @@ class UserController extends Controller
         
         try {
             if (!empty($data['password'])) {
-                $sql = "UPDATE users SET name = ?, email = ?, role = ?, seller_function = ?, password = ? WHERE id = ?";
+                $sql = "UPDATE users SET name = ?, email = ?, username = ?, role = ?, seller_function = ?, password = ? WHERE id = ?";
                 $this->db->prepare($sql)->execute([
                     $data['name'], 
                     $data['email'], 
+                    $data['username'] ?? null,
                     $data['role'], 
                     $data['seller_function'], 
                     password_hash($data['password'], PASSWORD_DEFAULT), 
                     $id
                 ]);
             } else {
-                $sql = "UPDATE users SET name = ?, email = ?, role = ?, seller_function = ? WHERE id = ?";
+                $sql = "UPDATE users SET name = ?, email = ?, username = ?, role = ?, seller_function = ? WHERE id = ?";
                 $this->db->prepare($sql)->execute([
                     $data['name'], 
                     $data['email'], 
+                    $data['username'] ?? null,
                     $data['role'], 
                     $data['seller_function'], 
                     $id
@@ -78,7 +85,11 @@ class UserController extends Controller
         } catch (\PDOException $e) {
             $error = $e->getMessage();
             if (strpos($error, 'Duplicate entry') !== false) {
-                $error = 'Este e-mail já está sendo utilizado por outro colaborador.';
+                if (strpos($error, 'username') !== false) {
+                    $error = 'Este nome de usuário já está sendo utilizado por outro colaborador.';
+                } else {
+                    $error = 'Este e-mail já está sendo utilizado por outro colaborador.';
+                }
             }
             $this->jsonResponse(['success' => false, 'error' => $error], 400);
         } catch (\Exception $e) {
@@ -96,8 +107,10 @@ class UserController extends Controller
     public function login(): void
     {
         $data = $this->getPostData();
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->execute([$data['email']]);
+        $loginIdentifier = $data['email'] ?? $data['username'] ?? $data['login'] ?? '';
+        
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ? OR username = ?");
+        $stmt->execute([$loginIdentifier, $loginIdentifier]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($data['password'], $user['password'])) {

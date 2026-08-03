@@ -12,6 +12,7 @@ const SellerForm = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    username: '',
     password: '',
     role: 'seller',
     seller_function: 'Stands'
@@ -41,6 +42,7 @@ const SellerForm = () => {
       if (current) {
         setFormData({
           ...current,
+          username: current.username || '',
           password: '' // Don't fetch password
         })
       }
@@ -121,38 +123,53 @@ const SellerForm = () => {
                 </div>
              </div>
 
-             <div className="flex gap-40 hq-row">
-                <div className="hq-field flex-1">
-                   <label className="hq-label">E-mail Profissional</label>
-                   <div className="hq-input-box glass border p-24 rounded-20 flex align-center gap-20">
-                      <Mail size={22} className="color-dim" />
-                      <input 
-                        type="email"
-                        className="hq-input-clean" 
-                        value={formData.email} 
-                        onChange={e => setFormData({...formData, email: e.target.value})} 
-                        placeholder="vendedor@exposistema.com"
-                        required
-                      />
-                   </div>
-                </div>
-                {!id && (
-                   <div className="hq-field flex-1">
-                      <label className="hq-label">Senha Provisória</label>
-                      <div className="hq-input-box glass border p-24 rounded-20 flex align-center gap-20">
-                         <Key size={22} className="color-dim" />
-                         <input 
-                           type="password"
-                           className="hq-input-clean" 
-                           value={formData.password} 
-                           onChange={e => setFormData({...formData, password: e.target.value})} 
-                           placeholder="Mínimo 8 caracteres"
-                           required
-                         />
-                      </div>
-                   </div>
-                )}
-             </div>
+              <div className="flex gap-40 hq-row">
+                 <div className="hq-field flex-1">
+                    <label className="hq-label">E-mail Profissional</label>
+                    <div className="hq-input-box glass border p-24 rounded-20 flex align-center gap-20">
+                       <Mail size={22} className="color-dim" />
+                       <input 
+                         type="email"
+                         className="hq-input-clean" 
+                         value={formData.email} 
+                         onChange={e => setFormData({...formData, email: e.target.value})} 
+                         placeholder="vendedor@exposistema.com"
+                         required
+                       />
+                    </div>
+                 </div>
+                 <div className="hq-field flex-1">
+                    <label className="hq-label">Nome de Usuário</label>
+                    <div className="hq-input-box glass border p-24 rounded-20 flex align-center gap-20">
+                       <User size={22} className="color-dim" />
+                       <input 
+                         type="text"
+                         className="hq-input-clean" 
+                         value={formData.username} 
+                         onChange={e => setFormData({...formData, username: e.target.value})} 
+                         placeholder="Ex: joao.silva"
+                         required
+                       />
+                    </div>
+                 </div>
+              </div>
+
+              {!id && (
+                 <div className="hq-field w-full mt-40">
+                    <label className="hq-label">Senha Provisória</label>
+                    <div className="hq-input-box glass border p-24 rounded-20 flex align-center gap-20">
+                       <Key size={22} className="color-dim" />
+                       <input 
+                         type="password"
+                         className="hq-input-clean" 
+                         value={formData.password} 
+                         onChange={e => setFormData({...formData, password: e.target.value})} 
+                         placeholder="Mínimo 8 caracteres"
+                         required
+                       />
+                    </div>
+                 </div>
+              )}
           </div>
 
           <div className="hq-section-group">

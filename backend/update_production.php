@@ -108,6 +108,21 @@ try {
         }
     }
 
+    // 5. Atualizar Tabela de Usuários (Adicionar username)
+    try {
+        $db->exec("ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE NULL");
+        echo "[OK] Coluna 'username' adicionada à tabela 'users'.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Coluna 'username' já existe ou erro ignorado.\n";
+    }
+
+    try {
+        $db->exec("UPDATE users SET username = SUBSTRING_INDEX(email, '@', 1) WHERE username IS NULL");
+        echo "[OK] Nomes de usuário provisórios gerados para os usuários existentes.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Não foi possível gerar nomes de usuário provisórios: " . $e->getMessage() . "\n";
+    }
+
     echo "\nAtualização concluída com sucesso!";
     echo "\nIMPORTANTE: APAGUE este arquivo do servidor por segurança.";
 

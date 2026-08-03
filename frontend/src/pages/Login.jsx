@@ -77,7 +77,7 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
             <Mail size={18} />
-            <input type="email" placeholder="E-mail" required />
+            <input type="text" placeholder="E-mail ou Usuário" required />
           </div>
           <div className="input-group">
             <Lock size={18} />

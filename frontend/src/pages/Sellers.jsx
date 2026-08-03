@@ -27,7 +27,8 @@ const Sellers = () => {
 
   const filteredSellers = sellers.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.email.toLowerCase().includes(searchTerm.toLowerCase())
+    s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.username && s.username.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   return (
@@ -51,7 +52,7 @@ const Sellers = () => {
            <Search size={24} className="color-muted" strokeWidth={2.5} />
            <input 
               className="premium-search-input" 
-              placeholder="Pesquise o colaborador por nome completo ou e-mail..." 
+              placeholder="Pesquise o colaborador por nome, e-mail ou usuário..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
            />
@@ -77,7 +78,14 @@ const Sellers = () => {
                     <div className="premium-avatar-box">{(seller.name || '?')[0]}</div>
                     <div className="flex-column gap-4">
                       <span className="font-bold text-base text-white">{seller.name}</span>
-                      <span className="text-xs color-muted flex align-center gap-6"><Mail size={12}/> {seller.email}</span>
+                      <div className="flex align-center gap-12 text-xs color-muted flex-wrap">
+                        <span className="flex align-center gap-6"><Mail size={12}/> {seller.email}</span>
+                        {seller.username && (
+                          <span className="flex align-center gap-6" style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>
+                            <strong>@</strong>{seller.username}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </td>
