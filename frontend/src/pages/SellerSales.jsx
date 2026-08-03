@@ -496,9 +496,16 @@ Obrigado por fechar negócio conosco!`;
                {step === 4 ? <ShoppingCart size={16} /> : <History size={16} />}
                <span>{step === 4 ? 'Vender' : 'Minhas Vendas'}</span>
             </button>
-            <button onClick={handleLogout} className="logout-btn-premium">
-               <LogOut size={16} />
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {(JSON.parse(localStorage.getItem('user') || '{}').role === 'admin' || JSON.parse(localStorage.getItem('user') || '{}').role === 'treasurer') && (
+                <button onClick={() => navigate('/dashboard')} className="logout-btn-premium" title="Voltar ao Painel">
+                   <ArrowUpRight size={16} />
+                </button>
+              )}
+              <button onClick={handleLogout} className="logout-btn-premium" title="Sair">
+                 <LogOut size={16} />
+              </button>
+            </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', marginTop: '8px' }}>
             <img src="/logo.png" style={{ height: '42px', width: 'auto', objectFit: 'contain' }} alt="Logo" />
