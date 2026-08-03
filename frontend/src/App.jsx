@@ -17,9 +17,14 @@ const SellerSales = lazy(() => import('./pages/SellerSales'))
 const useAuth = () => {
   const token = localStorage.getItem('token')
   const userJson = localStorage.getItem('user')
-  const user = userJson ? JSON.parse(userJson) : null
+  let user = null
+  try {
+    user = userJson ? JSON.parse(userJson) : null
+  } catch (e) {
+    console.error('Error parsing user from localStorage', e)
+  }
   
-  return { user, isAuthenticated: !!token }
+  return { user, isAuthenticated: !!token && !!user }
 }
 
 const ProtectedRoute = ({ children, roles }) => {
@@ -30,7 +35,7 @@ const ProtectedRoute = ({ children, roles }) => {
   if (roles && !roles.includes(userRole)) {
     // Redirect based on role if unauthorized for this specific route
     if (userRole === 'seller') return <Navigate to="/seller/terminal" replace />
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   }
   return children
 }
