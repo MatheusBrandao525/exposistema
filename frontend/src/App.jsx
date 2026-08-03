@@ -35,7 +35,7 @@ const ProtectedRoute = ({ children, roles }) => {
   if (roles && !roles.includes(userRole)) {
     // Redirect based on role if unauthorized for this specific route
     if (userRole === 'seller') return <Navigate to="/seller/terminal" replace />
-    return <Navigate to="/login" replace />
+    return <Navigate to="/dashboard" replace />
   }
   return children
 }
@@ -60,7 +60,8 @@ const App = () => {
               <Layout />
             </ProtectedRoute>
           }>
-            <Route index element={<Dashboard />} />
+            <Route index element={<Navigate to="/login" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="sales" element={<Sales />} />
             <Route path="financial" element={<Financial />} />
 

@@ -20,7 +20,7 @@ export const Layout = () => {
   const userRole = user.role || 'admin'
 
   const navItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard size={18} strokeWidth={2.5} />, path: '/', roles: ['admin', 'treasurer'] },
+    { name: 'Dashboard', icon: <LayoutDashboard size={18} strokeWidth={2.5} />, path: '/dashboard', roles: ['admin', 'treasurer'] },
     { name: 'Espaços', icon: <Image size={18} strokeWidth={2.5} />, path: '/spaces', roles: ['admin'] },
     { name: 'Financeiro', icon: <DollarSign size={18} strokeWidth={2.5} />, path: '/financial', roles: ['admin', 'treasurer'] },
     { name: 'Vendedores', icon: <Users size={18} strokeWidth={2.5} />, path: '/sellers', roles: ['admin'] },

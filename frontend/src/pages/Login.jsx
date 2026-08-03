@@ -8,6 +8,23 @@ const Login = () => {
   const [loading, setLoading] = React.useState(false)
   const [errorMsg, setErrorMsg] = React.useState('')
 
+  React.useEffect(() => {
+    const token = localStorage.getItem('token')
+    const userJson = localStorage.getItem('user')
+    if (token && userJson) {
+      try {
+        const user = JSON.parse(userJson)
+        if (user && user.role === 'seller') {
+          navigate('/seller/terminal', { replace: true })
+        } else if (user && (user.role === 'admin' || user.role === 'treasurer')) {
+          navigate('/dashboard', { replace: true })
+        }
+      } catch (e) {
+        console.error('Error parsing user data in Login', e)
+      }
+    }
+  }, [navigate])
+
   const showError = (msg) => {
     setErrorMsg(msg)
     setTimeout(() => {
@@ -31,7 +48,7 @@ const Login = () => {
         if (data.user.role === 'seller') {
           navigate('/seller/terminal')
         } else {
-          navigate('/')
+          navigate('/dashboard')
         }
       } else {
         showError(data?.error || 'E-mail ou senha incorretos.')
