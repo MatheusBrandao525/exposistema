@@ -28,6 +28,21 @@ try {
         echo "[INFO] Coluna 'allows_discount' já existe ou erro ignorado.\n";
     }
 
+    // 2a. Atualizar Tabela de Espaços (Adicionar controls_stock e stock_qty)
+    try {
+        $db->exec("ALTER TABLE ad_spaces ADD COLUMN controls_stock BOOLEAN DEFAULT FALSE");
+        echo "[OK] Coluna 'controls_stock' adicionada à tabela 'ad_spaces'.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Coluna 'controls_stock' já existe ou erro ignorado.\n";
+    }
+
+    try {
+        $db->exec("ALTER TABLE ad_spaces ADD COLUMN stock_qty INT DEFAULT 0");
+        echo "[OK] Coluna 'stock_qty' adicionada à tabela 'ad_spaces'.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Coluna 'stock_qty' já existe ou erro ignorado.\n";
+    }
+
     // 3. Atualizar Tabela de Vendas (Adicionar card_brand)
     try {
         $db->exec("ALTER TABLE sales ADD COLUMN card_brand VARCHAR(50) NULL");

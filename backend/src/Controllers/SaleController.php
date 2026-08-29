@@ -43,8 +43,8 @@ class SaleController extends Controller
     public function store(): void
     {
         $user = \App\Core\Auth::getUser();
-        if (!$user || $user['role'] !== 'seller') {
-            $this->jsonResponse(['success' => false, 'error' => 'Apenas vendedores podem realizar vendas.'], 403);
+        if (!$user || !in_array($user['role'], ['seller', 'admin', 'treasurer'])) {
+            $this->jsonResponse(['success' => false, 'error' => 'Apenas vendedores, administradores e tesoureiros podem realizar vendas.'], 403);
             return;
         }
 
@@ -96,11 +96,30 @@ class SaleController extends Controller
             $sale_id = $this->db->lastInsertId();
 
             $item_stmt = $this->db->prepare("INSERT INTO sale_items (sale_id, ad_space_id, item_price, quantity) VALUES (?, ?, ?, ?)");
-            $update_space = $this->db->prepare("UPDATE ad_spaces SET status = 'sold' WHERE id = ?");
+            $space_stmt = $this->db->prepare("SELECT controls_stock, stock_qty FROM ad_spaces WHERE id = ?");
 
             foreach ($data['items'] as $item) {
-                $item_stmt->execute([$sale_id, $item['id'], $item['price'], $item['quantity'] ?? 1]);
-                $update_space->execute([$item['id']]);
+                $qty = $item['quantity'] ?? 1;
+                $item_stmt->execute([$sale_id, $item['id'], $item['price'], $qty]);
+
+                // Query current stock status
+                $space_stmt->execute([$item['id']]);
+                $space = $space_stmt->fetch();
+
+                if ($space) {
+                    if ($space['controls_stock']) {
+                        $new_stock = max(0, (int)$space['stock_qty'] - $qty);
+                        if ($new_stock <= 0) {
+                            $this->db->prepare("UPDATE ad_spaces SET stock_qty = ?, status = 'sold' WHERE id = ?")
+                                     ->execute([$new_stock, $item['id']]);
+                        } else {
+                            $this->db->prepare("UPDATE ad_spaces SET stock_qty = ? WHERE id = ?")
+                                     ->execute([$new_stock, $item['id']]);
+                        }
+                    } else {
+                        // Does not control stock, do not set status to sold. Leave it available!
+                    }
+                }
             }
 
             $this->db->commit();
@@ -192,8 +211,41 @@ class SaleController extends Controller
             // 1. Atualizar Venda
             $this->db->prepare("UPDATE sales SET status = ? WHERE id = ?")->execute([$finalStatus, $id]);
 
-            // 2. Atualizar Espaços (usando sintaxe simplificada sem JOIN para evitar erro 500)
-            $this->db->prepare("UPDATE ad_spaces SET status = ? WHERE id IN (SELECT ad_space_id FROM sale_items WHERE sale_id = ?)")->execute([$spaceStatus, $id]);
+            // 2. Atualizar Espaços com base em controle de estoque
+            $items_stmt = $this->db->prepare("SELECT ad_space_id, quantity FROM sale_items WHERE sale_id = ?");
+            $items_stmt->execute([$id]);
+            $sale_items = $items_stmt->fetchAll();
+
+            $space_stmt = $this->db->prepare("SELECT controls_stock, stock_qty FROM ad_spaces WHERE id = ?");
+
+            foreach ($sale_items as $s_item) {
+                $space_stmt->execute([$s_item['ad_space_id']]);
+                $space = $space_stmt->fetch();
+
+                if ($space) {
+                    if (in_array($finalStatus, ['cancelled', 'refused', 'expired'])) {
+                        // Cancelling sale: release stock if controlled
+                        if ($space['controls_stock']) {
+                            $new_stock = (int)$space['stock_qty'] + (int)$s_item['quantity'];
+                            $this->db->prepare("UPDATE ad_spaces SET stock_qty = ?, status = 'available' WHERE id = ?")
+                                     ->execute([$new_stock, $s_item['ad_space_id']]);
+                        } else {
+                            $this->db->prepare("UPDATE ad_spaces SET status = 'available' WHERE id = ?")
+                                     ->execute([$s_item['ad_space_id']]);
+                        }
+                    } else {
+                        // Activating/Confirming sale: deduct stock if controlled
+                        if ($space['controls_stock']) {
+                            $new_stock = max(0, (int)$space['stock_qty'] - (int)$s_item['quantity']);
+                            $new_status = $new_stock <= 0 ? 'sold' : 'available';
+                            $this->db->prepare("UPDATE ad_spaces SET stock_qty = ?, status = ? WHERE id = ?")
+                                     ->execute([$new_stock, $new_status, $s_item['ad_space_id']]);
+                        } else {
+                            // Does not control stock, do not set status to sold. Leave it available!
+                        }
+                    }
+                }
+            }
 
             // 3. Sincronizar status das parcelas
             if ($finalStatus === 'paid') {

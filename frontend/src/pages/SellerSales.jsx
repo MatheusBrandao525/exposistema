@@ -176,6 +176,20 @@ const SellerSales = () => {
 
   const addToCart = (product) => {
     const existing = cart.find(item => item.id === product.id)
+    if (product.controls_stock) {
+      if (existing) {
+        if (existing.quantity >= product.stock_qty) {
+          alert(`Estoque máximo atingido para ${product.name} (${product.stock_qty} un disponíveis).`);
+          return;
+        }
+      } else {
+        if (product.stock_qty <= 0) {
+          alert(`O espaço ${product.name} não possui estoque disponível.`);
+          return;
+        }
+      }
+    }
+
     if (existing) {
       setCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
     } else {
@@ -688,6 +702,10 @@ Obrigado por fechar negócio conosco!`;
                         <button 
                           type="button" 
                           onClick={() => {
+                            if (item.controls_stock && item.quantity >= item.stock_qty) {
+                              alert(`Estoque máximo atingido (${item.stock_qty} un disponíveis).`);
+                              return;
+                            }
                             setCart(cart.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))
                           }}
                           style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
@@ -718,7 +736,10 @@ Obrigado por fechar negócio conosco!`;
                     <div className="item-icon"><Package size={20} className="color-accent" /></div>
                     <div className="item-info">
                       <strong>{product.name}</strong>
-                      <span className="price">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.base_price)}</span>
+                      <span className="price">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.base_price)}
+                        {product.controls_stock ? ` • Estoque: ${product.stock_qty} un` : ' • Estoque Ilimitado'}
+                      </span>
                     </div>
                     {inCart ? (
                       <div className="plus-btn-circle" style={{ background: 'var(--primary)', color: '#000', fontWeight: '800', fontSize: '12px' }}>

@@ -14,8 +14,8 @@ const AdSpaces = () => {
   const [editingSpace, setEditingSpace] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [types, setTypes] = useState([])
-  const [formData, setFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false })
-  const [editFormData, setEditFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false, status: 'available' })
+  const [formData, setFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false, stock_qty: 0 })
+  const [editFormData, setEditFormData] = useState({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false, stock_qty: 0, status: 'available' })
   const [saving, setSaving] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
@@ -95,13 +95,14 @@ const AdSpaces = () => {
         ad_space_type_id: formData.ad_space_type_id,
         base_price: parseFloat(formData.base_price),
         allows_discount: formData.allows_discount,
-        controls_stock: formData.controls_stock
+        controls_stock: formData.controls_stock,
+        stock_qty: formData.controls_stock ? parseInt(formData.stock_qty || 0) : 0
       };
       const res = await api.post('/spaces', payload);
       const data = await res.json();
       if (data.success) {
         setShowAddModal(false);
-        setFormData({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false });
+        setFormData({ name: '', ad_space_type_id: '', base_price: '', allows_discount: true, controls_stock: false, stock_qty: 0 });
         fetchSpaces();
       } else {
         alert(data.error || 'Erro ao criar espaço');
@@ -121,6 +122,7 @@ const AdSpaces = () => {
       base_price: space.base_price,
       allows_discount: space.allows_discount ? true : false,
       controls_stock: space.controls_stock ? true : false,
+      stock_qty: space.stock_qty || 0,
       status: space.status || 'available'
     });
     setShowEditModal(true);
@@ -136,6 +138,7 @@ const AdSpaces = () => {
         base_price: parseFloat(editFormData.base_price),
         allows_discount: editFormData.allows_discount,
         controls_stock: editFormData.controls_stock,
+        stock_qty: editFormData.controls_stock ? parseInt(editFormData.stock_qty || 0) : 0,
         status: editFormData.status
       };
       const res = await api.put(`/spaces/${editingSpace.id}`, payload);
@@ -192,6 +195,7 @@ const AdSpaces = () => {
               <th className="col-name">Espaço</th>
               <th className="col-type">Categoria</th>
               <th className="col-price">Valor Base</th>
+              <th className="col-stock">Estoque</th>
               <th className="col-status">Status</th>
               <th className="col-actions text-right">Ações</th>
             </tr>
@@ -199,7 +203,7 @@ const AdSpaces = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="text-center py-60">
+                <td colSpan="7" className="text-center py-60">
                    <div className="flex flex-column align-center gap-16">
                       <div className="spinner"></div>
                       <span className="color-muted">Sincronizando inventário...</span>
@@ -225,6 +229,13 @@ const AdSpaces = () => {
                 <td className="col-price">
                    <span className="font-bold text-white">{formatCurrency(space.base_price)}</span>
                 </td>
+                <td className="col-stock">
+                    {space.controls_stock ? (
+                       <span className="font-bold text-white">{space.stock_qty} un</span>
+                    ) : (
+                       <span className="color-muted italic" style={{ fontSize: '12px' }}>Ilimitado</span>
+                    )}
+                </td>
                 <td className="col-status">
                    <span className={`badge-pill-status ${space.status}`}>
                       {space.status === 'available' ? 'Disponível' : 'Indisponível'}
@@ -241,7 +252,7 @@ const AdSpaces = () => {
               </tr>
             )) : (
               <tr>
-                <td colSpan="6" className="text-center py-60 color-muted italic">
+                <td colSpan="7" className="text-center py-60 color-muted italic">
                    Nenhum espaço encontrado com este critério de busca.
                 </td>
               </tr>
@@ -324,6 +335,10 @@ const AdSpaces = () => {
                         <div className="info-entry highlight">
                            <label>Valor de Tabela</label>
                            <strong>{formatCurrency(selectedSpace.base_price)}</strong>
+                        </div>
+                        <div className="info-entry">
+                           <label>Controle de Estoque</label>
+                           <strong>{selectedSpace.controls_stock ? `Sim (${selectedSpace.stock_qty} un disponíveis)` : 'Não (Vendas Ilimitadas)'}</strong>
                         </div>
                         <div className="info-entry">
                            <label>Status Atual</label>
@@ -461,6 +476,18 @@ const AdSpaces = () => {
                         />
                         <label htmlFor="controlsStock" style={{ fontSize: '14px', color: '#fff', textTransform: 'none' }}>Controla Estoque?</label>
                      </div>
+                     {formData.controls_stock && (
+                         <div className="form-group animate-fadeIn">
+                            <label>Quantidade Disponível em Estoque</label>
+                            <input 
+                               type="number" 
+                               min="0" 
+                               required 
+                               value={formData.stock_qty} 
+                               onChange={e => setFormData({...formData, stock_qty: e.target.value})} 
+                            />
+                         </div>
+                      )}
                      
                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                         <button type="button" className="btn-minimal" onClick={() => setShowAddModal(false)}>Cancelar</button>
@@ -564,6 +591,18 @@ const AdSpaces = () => {
                         />
                         <label htmlFor="editControlsStock" style={{ fontSize: '14px', color: '#fff', textTransform: 'none' }}>Controla Estoque?</label>
                      </div>
+                     {editFormData.controls_stock && (
+                         <div className="form-group animate-fadeIn">
+                            <label>Quantidade Disponível em Estoque</label>
+                            <input 
+                               type="number" 
+                               min="0" 
+                               required 
+                               value={editFormData.stock_qty} 
+                               onChange={e => setEditFormData({...editFormData, stock_qty: e.target.value})} 
+                            />
+                         </div>
+                      )}
                      
                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                         <button type="button" className="btn-minimal" onClick={() => setShowEditModal(false)}>Cancelar</button>

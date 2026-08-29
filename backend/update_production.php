@@ -32,6 +32,21 @@ try {
         echo "[INFO] Coluna 'allows_discount' já existe ou erro ignorado.\n";
     }
 
+    // 2a. Atualizar Tabela de Espaços (Adicionar controls_stock e stock_qty)
+    try {
+        $db->exec("ALTER TABLE ad_spaces ADD COLUMN controls_stock BOOLEAN DEFAULT FALSE");
+        echo "[OK] Coluna 'controls_stock' adicionada à tabela 'ad_spaces'.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Coluna 'controls_stock' já existe ou erro ignorado.\n";
+    }
+
+    try {
+        $db->exec("ALTER TABLE ad_spaces ADD COLUMN stock_qty INT DEFAULT 0");
+        echo "[OK] Coluna 'stock_qty' adicionada à tabela 'ad_spaces'.\n";
+    } catch (Exception $e) {
+        echo "[INFO] Coluna 'stock_qty' já existe ou erro ignorado.\n";
+    }
+
     // 2b. Atualizar Tabela de Vendas (Adicionar card_brand, card_fee_rate, card_fee_amount)
     try {
         $db->exec("ALTER TABLE sales ADD COLUMN card_brand VARCHAR(50) NULL");
@@ -121,6 +136,118 @@ try {
         echo "[OK] Nomes de usuário provisórios gerados para os usuários existentes.\n";
     } catch (Exception $e) {
         echo "[INFO] Não foi possível gerar nomes de usuário provisórios: " . $e->getMessage() . "\n";
+    }
+
+    // 6. Cadastrar/Atualizar Lista de Sócios
+    try {
+        $partners = [
+            ['name' => 'ADEMAR PEREIRA DE OLIVEIRA', 'cpf' => '212.213.596-49'],
+            ['name' => 'ADRIANO JOSE REPISO LOPES', 'cpf' => '010.314.512-50'],
+            ['name' => 'AGILMAR PASITO', 'cpf' => '975.427.092-91'],
+            ['name' => 'AGNIELDE BENICI ADORNO', 'cpf' => '009.428.022-33'],
+            ['name' => 'AILSON ANTÔNIO PEREIRA', 'cpf' => '271.866.602-15'],
+            ['name' => 'AILSON WILHYAN CECCON PEREIRA', 'cpf' => '002.947.552-09'],
+            ['name' => 'ALESSANDRO CESAR DA SILVA', 'cpf' => '604.142.192-87'],
+            ['name' => 'ALESSANDRO RODRIGUES VIEIRA', 'cpf' => '004.913.352-70'],
+            ['name' => 'AMANDA DOS SANTOS SOUZA', 'cpf' => '011.248.912-50'],
+            ['name' => 'ANDERSON R MACHADO', 'cpf' => '014.123.062-21'],
+            ['name' => 'ANDRE GRANDO', 'cpf' => '849.953.272-15'],
+            ['name' => 'ANGELO DOS SANTOS FALCAO CLEMENTE', 'cpf' => '827.995.632-87'],
+            ['name' => 'ANTONIO DE ALMEIDA', 'cpf' => '303.007.709-87'],
+            ['name' => 'BRUNO CHAGAS DOS SANTOS', 'cpf' => '024.812.572-94'],
+            ['name' => 'CARISMAR OTAVIO BARROS DE SOUZA', 'cpf' => '808.978.787-87'],
+            ['name' => 'CARISVALDO PEREIRA DE SOUZA', 'cpf' => '087.187.417-20'],
+            ['name' => 'CARLOS HENRIQUE DA SILVA', 'cpf' => '038.503.802-03'],
+            ['name' => 'CARLOS OBADIAS VIEIRA PEREIRA', 'cpf' => '955.185.172-20'],
+            ['name' => 'CHARLES EIJI ROSSO', 'cpf' => '010.437.239-78'],
+            ['name' => 'CLAUDIA DIONE LAZZARIN PEREIRA', 'cpf' => '469.558.872-20'],
+            ['name' => 'CRISTIANE GOULART', 'cpf' => '330.406.278-56'],
+            ['name' => 'DARLAN DE PAULA', 'cpf' => '422.008.302-20'],
+            ['name' => 'DOUGLAS ARAUJO ROBERTO', 'cpf' => '025.502.262-08'],
+            ['name' => 'EDER PEREIRA DA CRUZ', 'cpf' => '410.269.261-49'],
+            ['name' => 'EDNO ROGERIO CARDOSO', 'cpf' => '575.391.382-20'],
+            ['name' => 'EDSON MARCELINO DA SILVA', 'cpf' => '649.055.942-00'],
+            ['name' => 'ELIEL ROBSON DOS SANTOS', 'cpf' => '873.226.682-00'],
+            ['name' => 'EMERSON CARLOS DA SILVA', 'cpf' => '312.179.742-53'],
+            ['name' => 'EMERSON GONÇALVES NIZA', 'cpf' => '386.943.362-00'],
+            ['name' => 'EMERSON GONÇALVES NIZA JUNIOR', 'cpf' => '811.595.952-91'],
+            ['name' => 'EMERSON RAUPP ARAUJO FERMIANO', 'cpf' => '040.551.412-38'],
+            ['name' => 'ERNANDO SANTOS MARTINS', 'cpf' => '415.821.281-20'],
+            ['name' => 'EVANDRO LUIZ DALLE LASTE', 'cpf' => '595.413.002-78'],
+            ['name' => 'FABRICIA UCHAKI DA SILVA', 'cpf' => '584.645.732-00'],
+            ['name' => 'FAGNER POSSA', 'cpf' => '997.985.902-44'],
+            ['name' => 'FERNANDO SCHERER', 'cpf' => '896.767.262-49'],
+            ['name' => 'GEDEON DA COSTA PAULA', 'cpf' => '002.260.962-89'],
+            ['name' => 'GIBSON PEREIRA OTONI', 'cpf' => '027.911.602-05'],
+            ['name' => 'GLECIDES ANTONIO CARVALHO BORBA', 'cpf' => '946.718.421-49'],
+            ['name' => 'IDALINA STRELOW', 'cpf' => '560.515.652-72'],
+            ['name' => 'ILSON PARRÃO PARRÃO', 'cpf' => '174.111.491-87'],
+            ['name' => 'JEFERSON JOÃO ZILES', 'cpf' => '565.142.802-00'],
+            ['name' => 'JOÃO EWERSON GOMES GENELHUD', 'cpf' => '445.765.738-70'],
+            ['name' => 'JOAO PEDRO PIRES CAETANO', 'cpf' => '050.258.972-89'],
+            ['name' => 'JOCIMAR CARLOS SEEP', 'cpf' => '558.612.882-91'],
+            ['name' => 'JONATHAN WILLIAN SOUZA ZEMKE', 'cpf' => '064.643.692-96'],
+            ['name' => 'JORGITO OLIVEIRA TEIXEIRA', 'cpf' => '627.827.701-87'],
+            ['name' => 'JORSIMAR RODRIGUES DE CASTRO', 'cpf' => '658.496.122-20'],
+            ['name' => 'JOSE ALEXANDRE DA LAMARTA', 'cpf' => '520.179.902-72'],
+            ['name' => 'JUCELIA LILLIAN DE PAULA', 'cpf' => '036.869.446-18'],
+            ['name' => 'JULIANO CORDEIRO DE SOUZA', 'cpf' => '019.611.342-33'],
+            ['name' => 'JULIO CEZAR FELIX', 'cpf' => '804.608.442-53'],
+            ['name' => 'LARI MARQUETTI', 'cpf' => '395.456.609-53'],
+            ['name' => 'LUCILO CANI', 'cpf' => '577.347.987-72'],
+            ['name' => 'LUIZ CARLOS DE SOUSA', 'cpf' => '485.672.132-15'],
+            ['name' => 'LUIZ TEIXEIRA DE AGUIAR', 'cpf' => '326.209.932-53'],
+            ['name' => 'MARCELO TALLES PARRÃO', 'cpf' => '008.972.002-41'],
+            ['name' => 'MARCOS DE ARAUJO ROCHA', 'cpf' => '565.752.622-87'],
+            ['name' => 'MAURO ADRIANO DE SOUZA', 'cpf' => '473.700.416-20'],
+            ['name' => 'MOACIR JOSÉ BALDISSERA', 'cpf' => '146.511.819-53'],
+            ['name' => 'MOISES RAMOS DOS SANTOS', 'cpf' => '642.425.011-53'],
+            ['name' => 'NELSON POLITA', 'cpf' => '581.040.209-78'],
+            ['name' => 'NIRQUERSON GRANDO', 'cpf' => '934.882.032-04'],
+            ['name' => 'OBERDA PLENTZ', 'cpf' => '741.464.839-72'],
+            ['name' => 'OCLIDES THOMAZ ERLICH', 'cpf' => '799.381.672-68'],
+            ['name' => 'ODITON DOUGLAS PEREIRA', 'cpf' => '303.648.681-04'],
+            ['name' => 'PABLO TAVARES INACIO SILVEIRA', 'cpf' => '899.006.502-04'],
+            ['name' => 'RAIMUNDO JOSE DE SOUZA NETO', 'cpf' => '106.944.472-34'],
+            ['name' => 'RODRIGO BALDISSERA', 'cpf' => '385.954.512-49'],
+            ['name' => 'RONIERI CARRARO DE SOUZA', 'cpf' => '031.502.902-10'],
+            ['name' => 'SAMUEL BARBOSA CAVALCANTE', 'cpf' => '639.032.022-15'],
+            ['name' => 'SOLIVAN JULIO DE ANDRADE', 'cpf' => '028.785.719-08'],
+            ['name' => 'TALIS ROBERTO SIMONATO', 'cpf' => '826.710.012-15'],
+            ['name' => 'TIAGO SILVA LEMOS', 'cpf' => '802.413.282-68'],
+            ['name' => 'UILIAN AMARAL FIGUEIREDO', 'cpf' => '004.208.872-02'],
+            ['name' => 'VANDERLI ANTONIO PAGOTO JUNIOR', 'cpf' => '818.942.602-87'],
+            ['name' => 'VICENTE MATTOS ANTONELLI', 'cpf' => '049.326.702-65'],
+            ['name' => 'VILMAR OGRODOWCZYK', 'cpf' => '555.129.259-20'],
+        ];
+
+        $stmtCheck = $db->prepare("SELECT id, is_partner FROM clients WHERE document = ?");
+        $stmtInsert = $db->prepare("INSERT INTO clients (name, is_partner, is_company, document) VALUES (?, 1, 0, ?)");
+        $stmtUpdate = $db->prepare("UPDATE clients SET is_partner = 1 WHERE id = ?");
+
+        echo "\nCadastrando/Atualizando sócios...\n";
+        $inserted = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($partners as $partner) {
+            $stmtCheck->execute([$partner['cpf']]);
+            $existing = $stmtCheck->fetch();
+            if ($existing) {
+                if (!$existing['is_partner']) {
+                    $stmtUpdate->execute([$existing['id']]);
+                    $updated++;
+                } else {
+                    $skipped++;
+                }
+            } else {
+                $stmtInsert->execute([$partner['name'], $partner['cpf']]);
+                $inserted++;
+            }
+        }
+        echo "[OK] Sócios processados: $inserted inseridos, $updated atualizados, $skipped pulados.\n";
+    } catch (Exception $e) {
+        echo "[ERRO] Erro ao cadastrar sócios: " . $e->getMessage() . "\n";
     }
 
     echo "\nAtualização concluída com sucesso!";
